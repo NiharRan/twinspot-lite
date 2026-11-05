@@ -51,6 +51,12 @@ Instead of refusing a "new customers only" coupon, the order is placed with the 
 
 Many honest customers share an IP address (offices, mobile networks), so it is stored but not used for matching.
 
+== Source code and third-party libraries ==
+
+The admin screen is a React app. The files in `build/` are compiled from the readable source in `src/`, available at https://github.com/NiharRan/twinspot-lite. To rebuild: run `npm ci && npm run build`.
+
+The build bundles these libraries, all GPL-compatible: @radix-ui/react-dialog, @xyflow/react, motion, clsx and tailwind-merge (MIT); d3-force and lucide-react (ISC); class-variance-authority (Apache-2.0). Their licenses are in the repository's `package-lock.json` and in each package on npm.
+
 == Changelog ==
 
 = 0.1.0 =
