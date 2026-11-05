@@ -41,10 +41,12 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 - Hold only applies to coupons with "New customers only (Twinspot)" ticked. Orders without such a coupon are never held.
 - Admin-blocked rings refuse every coupon in both block and hold mode. Only the shield being fully off (both toggles off) disables them.
 - Hold checks matches at order creation only, not when an order later reaches processing or completed.
-- A held order is released by changing its status away from on-hold; this clears `_twinspot_lite_held`, so later payment webhooks do not hold it again.
+- A held order is released when a user with `edit_shop_orders` changes its status away from on-hold; this clears `_twinspot_lite_held`, so later payment webhooks do not hold it again.
 
 ## Roadmap items not started
 
 - Visual ring graph beyond the current connection map, auto-hold on suspicious orders by score, refund-abuse scoring.
 - Optional hosted engine and Pro features, WooCommerce.com Marketplace, link to the Twinspot Shopify app.
 - Device fingerprinting: out of scope until there is a consent toggle.
+
+- A gateway that calls `update_status('processing')` directly (not `payment_complete()`) can still move a held order out of on-hold. Fix would be reverting non-admin status changes on orders with `_twinspot_lite_held`.

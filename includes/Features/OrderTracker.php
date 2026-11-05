@@ -37,11 +37,11 @@ class OrderTracker implements Module {
 			10,
 			2
 		);
-		// Leaving on-hold is the merchant releasing the order (our filter keeps gateways from doing it), so a late payment webhook must not hold it again.
+		// A shop manager leaving on-hold releases the order; gateway or webhook changes (no logged-in user) keep the flag, so a late payment_complete still holds it.
 		add_action(
 			'woocommerce_order_status_changed',
 			function ( $order_id, $from, $to ) {
-				$order = 'on-hold' === $from && 'on-hold' !== $to ? wc_get_order( $order_id ) : null;
+				$order = 'on-hold' === $from && 'on-hold' !== $to && current_user_can( 'edit_shop_orders' ) ? wc_get_order( $order_id ) : null;
 				if ( $order && $order->get_meta( '_twinspot_lite_held' ) ) {
 					$order->delete_meta_data( '_twinspot_lite_held' );
 					$order->save();
