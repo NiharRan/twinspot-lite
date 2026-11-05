@@ -90,5 +90,5 @@ $check( 'Gmail dot alias of Alice', 'a.l.i.c.e.smith@gmail.com', '555-000-2222',
 $check( 'same phone as Alice, other email', 'x@example.com', '+1 555 111 2222', '3 New Road', '11113', 'WELCOME10', false );
 $check( 'same address as Bob', 'y@example.com', '555-000-3333', '7 river lane', '30301', 'WELCOME15', false );
 $check( 'Alice, coupon without the rule', 'alice.smith@gmail.com', '555-111-2222', '12 Oak Street', '90210', 'SAVE5', true );
-$check( 'matches only the cancelled order', 'z@example.com', '555-444-5555', '4 Other St', '22222', 'WELCOME15', false ); // Dave's completed order shares this phone, so refused.
+$check( 'same phone as Dave (completed order)', 'z@example.com', '555-444-5555', '4 Other St', '22222', 'WELCOME15', false );
 $check( 'missing details fail open', '', '', '', '', 'WELCOME15', true );
