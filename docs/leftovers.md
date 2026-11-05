@@ -16,7 +16,6 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 1. Confirm `Contributors` in `readme.txt` is the real WordPress.org username, and `Tested up to` is the current WordPress major version.
 2. Add `.wordpress-org/` assets: `banner-772x250.png`, `banner-1544x500.png`, `icon-128x128.png`, `icon-256x256.png`, screenshots, then a Screenshots section in the readme.
 3. Run Plugin Check and PHPCS (WordPress standards) in a local WooCommerce site (Herd).
-4. Document the new `twinspot_lite_hold_orders` option and hold mode in the readme and FAQ.
 
 ## Scale limits
 

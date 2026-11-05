@@ -16,7 +16,8 @@ Some shoppers create many accounts to claim your first-order discount again and 
 
 * **New customers only coupons.** Tick "New customers only (Twinspot)" on a coupon. If the shopper's email, phone or address matches an earlier order, the coupon is refused. Gmail dots and `+tags` are treated as the same address.
 * **Rings.** WooCommerce > Twinspot lists groups of orders linked to each other. A shares a phone with B and B shares an address with C, so all three show as one ring.
-* **Order notes.** An order that matches earlier orders gets a note naming them.
+* **Order notes.** An order that matches earlier orders gets a note naming them, with links to those orders and to the ring. When a coupon is refused, the order the shopper then places gets a "Twinspot System Alert" note naming the coupon.
+* **Hold for review.** Under Plugin Settings, switch from refusing the coupon to holding the order. The shopper keeps the discount, but the order is set to On hold until you release it by changing its status. Rings you block by hand stay refused.
 * **Import past orders.** One click indexes the last 12 months so rings show up on day one.
 * Works with classic and block checkout, and with High-Performance Order Storage.
 * If details are missing the coupon is allowed, so a checkout is never broken.
@@ -41,6 +42,10 @@ No. Everything stays in your own database.
 = Can it block shoppers who use a different name? =
 
 Yes, if they reuse the same email (including Gmail aliases), phone number or street address plus postcode.
+
+= What does hold for review do? =
+
+Instead of refusing a "new customers only" coupon, the order is placed with the discount and set to On hold, even if a payment gateway reports it paid. Change the status to release it. Blocking and holding are alternatives: only one is active at a time.
 
 = Why is IP address not used to block? =
 
