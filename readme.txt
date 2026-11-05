@@ -1,5 +1,5 @@
 === Twinspot Lite ===
-Contributors: niharranjandas
+Contributors: nihar007
 Tags: woocommerce, coupons, fraud, abuse, checkout
 Requires at least: 6.6
 Tested up to: 6.8
