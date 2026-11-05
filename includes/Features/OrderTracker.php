@@ -37,6 +37,19 @@ class OrderTracker implements Module {
 			10,
 			2
 		);
+		// Leaving on-hold is the merchant releasing the order (our filter keeps gateways from doing it), so a late payment webhook must not hold it again.
+		add_action(
+			'woocommerce_order_status_changed',
+			function ( $order_id, $from, $to ) {
+				$order = 'on-hold' === $from && 'on-hold' !== $to ? wc_get_order( $order_id ) : null;
+				if ( $order && $order->get_meta( '_twinspot_lite_held' ) ) {
+					$order->delete_meta_data( '_twinspot_lite_held' );
+					$order->save();
+				}
+			},
+			10,
+			3
+		);
 		// A failed or cancelled order can later succeed on retry, so index it again once it reaches an active status.
 		foreach ( array( 'processing', 'completed', 'on-hold' ) as $status ) {
 			add_action(

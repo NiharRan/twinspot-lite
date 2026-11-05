@@ -53,13 +53,15 @@ class CouponGuard implements Module {
 
 	public function validate( $valid, $coupon ) {
 		$block = 'no' !== get_option( 'twinspot_lite_enabled' );
-		if ( ! $valid || ! $block || ! WC()->customer ) { // Hold mode never refuses a coupon; OrderTracker holds the order instead.
+		$hold  = 'yes' === get_option( 'twinspot_lite_hold_orders' );
+		if ( ! $valid || ( ! $block && ! $hold ) || ! WC()->customer ) {
 			return $valid;
 		}
 		$c       = WC()->customer;
 		$h       = $this->fingerprinter->hashes( $c->get_billing_email(), $c->get_billing_phone(), $c->get_billing_address_1(), $c->get_billing_postcode() );
 		$blocked = $this->log->is_blocked( $h ); // Admin blocked this ring from every coupon.
-		if ( ! $blocked && 'yes' !== $coupon->get_meta( self::META ) ) {
+		// Hold mode never refuses on the "new customers only" rule (OrderTracker holds the order), but admin-blocked rings stay refused.
+		if ( ! $blocked && ( ! $block || 'yes' !== $coupon->get_meta( self::META ) ) ) {
 			return $valid;
 		}
 		$ids = $this->edges->matches( $h ); // Empty details match nothing, so this fails open.
