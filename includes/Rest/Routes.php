@@ -133,9 +133,14 @@ class Routes implements Module {
 				'permission_callback' => $permission,
 				'callback'            => function ( \WP_REST_Request $req ) {
 					if ( 'POST' === $req->get_method() ) {
-						update_option( 'twinspot_lite_enabled', rest_sanitize_boolean( $req->get_param( 'enabled' ) ) ? 'yes' : 'no' );
+						$hold = rest_sanitize_boolean( $req->get_param( 'hold' ) );
+						update_option( 'twinspot_lite_enabled', ! $hold && rest_sanitize_boolean( $req->get_param( 'enabled' ) ) ? 'yes' : 'no' ); // Block and hold are exclusive.
+						update_option( 'twinspot_lite_hold_orders', $hold ? 'yes' : 'no' );
 					}
-					return array( 'enabled' => 'no' !== get_option( 'twinspot_lite_enabled' ) );
+					return array(
+						'enabled' => 'no' !== get_option( 'twinspot_lite_enabled' ),
+						'hold'    => 'yes' === get_option( 'twinspot_lite_hold_orders' ),
+					);
 				},
 			)
 		);

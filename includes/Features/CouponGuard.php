@@ -52,7 +52,8 @@ class CouponGuard implements Module {
 	}
 
 	public function validate( $valid, $coupon ) {
-		if ( ! $valid || 'no' === get_option( 'twinspot_lite_enabled' ) || ! WC()->customer ) {
+		$block = 'no' !== get_option( 'twinspot_lite_enabled' );
+		if ( ! $valid || ! $block || ! WC()->customer ) { // Hold mode never refuses a coupon; OrderTracker holds the order instead.
 			return $valid;
 		}
 		$c       = WC()->customer;

@@ -25,8 +25,18 @@ class OrderTracker implements Module {
 	}
 
 	public function register(): void {
-		add_action( 'woocommerce_checkout_order_created', array( $this, 'record' ) );             // Classic checkout.
-		add_action( 'woocommerce_store_api_checkout_order_processed', array( $this, 'record' ) );  // Block checkout.
+		add_action( 'woocommerce_checkout_order_created', array( $this, 'created' ) );             // Classic checkout.
+		add_action( 'woocommerce_store_api_checkout_order_processed', array( $this, 'created' ) );  // Block checkout.
+		// Paid gateways call payment_complete(), which would otherwise move a held order to processing.
+		add_filter(
+			'woocommerce_payment_complete_order_status',
+			function ( $status, $order_id ) {
+				$order = wc_get_order( $order_id );
+				return $order && $order->get_meta( '_twinspot_lite_held' ) ? 'on-hold' : $status;
+			},
+			10,
+			2
+		);
 		// A failed or cancelled order can later succeed on retry, so index it again once it reaches an active status.
 		foreach ( array( 'processing', 'completed', 'on-hold' ) as $status ) {
 			add_action(
@@ -38,6 +48,23 @@ class OrderTracker implements Module {
 		}
 		foreach ( array( 'woocommerce_order_status_cancelled', 'woocommerce_order_status_failed', 'woocommerce_delete_order' ) as $hook ) {
 			add_action( $hook, array( $this, 'forget' ) );
+		}
+	}
+
+	/** New checkout order: index it, then hold it if hold mode is on and a "new customers only" coupon was used by a repeat shopper. */
+	public function created( $order ): void {
+		$this->record( $order );
+		if ( ! $order instanceof \WC_Order || 'yes' !== get_option( 'twinspot_lite_hold_orders' ) || 'no' !== get_option( 'twinspot_lite_enabled' ) ) {
+			return; // With blocking on, the coupon was already refused at checkout.
+		}
+		$first_only = false;
+		foreach ( $order->get_coupon_codes() as $code ) {
+			$first_only = $first_only || 'yes' === ( new \WC_Coupon( $code ) )->get_meta( CouponGuard::META );
+		}
+		$m = $first_only ? $this->edges->matches( $this->fingerprinter->hashes( $order->get_billing_email(), $order->get_billing_phone(), $order->get_billing_address_1(), $order->get_billing_postcode() ), $order->get_id() ) : array();
+		if ( $m ) {
+			$order->update_meta_data( '_twinspot_lite_held', 1 );
+			$order->update_status( 'on-hold', __( 'Twinspot: held for review, a new-customers-only coupon was used by a returning shopper.', 'twinspot-lite' ) );
 		}
 	}
 

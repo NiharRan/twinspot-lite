@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { MotionConfig } from 'motion/react';
-import { getOverview, getSettings, importBatch, saveSettings, setSample } from './lib/api';
+import { getOverview, getSettings, importBatch, saveSettings, setSample, type SettingsData } from './lib/api';
 import { Header } from './components/header';
 import { Accounts } from './screens/accounts';
 import { Activity } from './screens/activity';
@@ -18,7 +18,8 @@ export function App() {
 	const [ importing, setImporting ] = useState( false );
 	const [ tab, setTab ] = useState< Tab >( 'overview' );
 	const [ ringKey, setRingKey ] = useState< number | null >( null );
-	const [ enabled, setEnabled ] = useState( true );
+	const [ settings, setSettings ] = useState< SettingsData >( { enabled: true, hold: false } );
+	const enabled = settings.enabled || settings.hold; // Hold mode still guards coupons, just without refusing them.
 	const [ progress, setProgress ] = useState( 0 );
 	const [ imported, setImported ] = useState< { n: number; seconds: number } | null >( null );
 
@@ -29,16 +30,10 @@ export function App() {
 	}, [ filters ] );
 
 	useEffect( () => {
-		getSettings().then( ( r ) => setEnabled( r.enabled ) ).catch( () => {} );
+		getSettings().then( setSettings ).catch( () => {} );
 	}, [] );
 
-	const toggleEnabled = ( on: boolean ) => {
-		setEnabled( on );
-		saveSettings( on ).catch( ( e: Error ) => {
-			setEnabled( ! on );
-			setError( e.message );
-		} );
-	};
+	const save = ( next: SettingsData ) => saveSettings( next ).then( setSettings );
 
 	useEffect( () => {
 		const t = setTimeout( load, filters.search ? 250 : 0 ); // Debounce typing only.
@@ -111,7 +106,7 @@ export function App() {
 			{ ringKey === null && tab === 'accounts' && <Accounts onOpen={ setRingKey } data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
 			{ ringKey === null && tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
 			{ ringKey === null && tab === 'activity' && <Activity /> }
-			{ ringKey === null && tab === 'settings' && <Settings enabled={ enabled } setEnabled={ toggleEnabled } /> }
+			{ ringKey === null && tab === 'settings' && <Settings saved={ settings } onSave={ save } /> }
 		</MotionConfig>
 	);
 }
