@@ -25,8 +25,8 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 
 ## Left out of the Plugin Settings design on purpose
 
-- Fake WordPress admin chrome and the "Simulated Shopper" label from the mockup.
-- "Read our plain-language Privacy Policy" link: it belongs to the cloud lookup, which does not exist.
+- Fake WordPress admin chrome (sidebar, top bar) from the mockup.
+- Product photos in the preview (neutral icon tiles instead). "Read our plain-language Privacy Policy" link: it belongs to the cloud lookup, which does not exist.
 - The preview uses static demo data (Alex Mercer, WELCOME20 at 20%). It does not read a real coupon or the store's currency.
 - The shopper-facing coupon notice text is not editable. A custom message setting could come later.
 
@@ -40,6 +40,7 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 - Block and hold are mutually exclusive. If merchants want both (block known rings, hold the rest), the settings model needs a third state.
 - Hold only applies to coupons with "New customers only (Twinspot)" ticked. Orders without such a coupon are never held.
 - Admin-blocked rings refuse every coupon in both block and hold mode. Only the shield being fully off (both toggles off) disables them.
+- A gateway that calls `update_status('processing')` directly (not `payment_complete()`) can still move a held order out of on-hold. Fix would be reverting non-admin status changes on orders with `_twinspot_lite_held`.
 - Hold checks matches at order creation only, not when an order later reaches processing or completed.
 - A held order is released when a user with `edit_shop_orders` changes its status away from on-hold; this clears `_twinspot_lite_held`, so later payment webhooks do not hold it again.
 
@@ -48,5 +49,3 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 - Visual ring graph beyond the current connection map, auto-hold on suspicious orders by score, refund-abuse scoring.
 - Optional hosted engine and Pro features, WooCommerce.com Marketplace, link to the Twinspot Shopify app.
 - Device fingerprinting: out of scope until there is a consent toggle.
-
-- A gateway that calls `update_status('processing')` directly (not `payment_complete()`) can still move a held order out of on-hold. Fix would be reverting non-admin status changes on orders with `_twinspot_lite_held`.

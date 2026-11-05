@@ -1,6 +1,6 @@
 import { useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { Ban, Check, CheckCircle2, CloudCog, Info, PauseCircle, RotateCcw, Save, ShieldCheck, Store, X } from 'lucide-react';
+import { Ban, Check, CheckCircle2, CloudCog, CreditCard, Info, Lock, Package, PauseCircle, RotateCcw, Save, ScanSearch, ShieldCheck, Store, Tag, Ticket, User, Wallet, X, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card } from '../components/ui/card';
@@ -47,31 +47,21 @@ const money = ( n: number ) => '$' + n.toFixed( 2 );
 function Preview( { draft }: { draft: SettingsData } ) {
 	const [ view, setView ] = useState< View >( 'block' );
 	const [ dismissed, setDismissed ] = useState( false );
+	const [ pay, setPay ] = useState< 'card' | 'wallet' >( 'card' );
 	const blocked = draft.enabled && ! draft.hold;
 	const subtotal = 78.5;
 	const discount = blocked ? 0 : 15.7; // WELCOME20 = 20% off.
 	const total = subtotal + 5 - discount;
-	const notice = (
-		<div role="alert" className="flex items-start gap-3 rounded-lg border border-danger-line bg-danger-soft p-3 text-danger">
-			<Info size={ 16 } className="mt-0.5" />
-			<div className="flex-1">
-				<p className="font-medium">{ __( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ) }</p>
-				{ view === 'block' && <p className="text-[12px] text-muted">{ __( 'If you have another offer code or store gift card, feel free to enter it above.', 'twinspot-lite' ) }</p> }
-			</div>
-			{ view === 'block' && (
-				<button type="button" aria-label={ __( 'Dismiss', 'twinspot-lite' ) } onClick={ () => setDismissed( true ) }><X size={ 14 } /></button>
-			) }
-		</div>
-	);
-	const reset = () => { setView( 'block' ); setDismissed( false ); };
+	const block = view === 'block';
+	const reset = () => { setView( 'block' ); setDismissed( false ); setPay( 'card' ); };
 	return (
-		<Card className="p-6">
-			<div className="flex flex-wrap items-start justify-between gap-4">
+		<div className="space-y-4">
+			<Card className="flex flex-wrap items-center justify-between gap-4 p-5">
 				<div className="flex items-start gap-3">
 					<span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary"><ShieldCheck size={ 20 } /></span>
 					<div>
-						<h2 className="flex items-center gap-2 text-[16px] font-semibold">{ __( 'Checkout Experience', 'twinspot-lite' ) }<Badge>{ __( 'Live simulation', 'twinspot-lite' ) }</Badge></h2>
-						<p className="text-muted">{ __( 'See what a returning shopper sees. Updates as you change the settings below.', 'twinspot-lite' ) }</p>
+						<h2 className="flex items-center gap-2 text-[16px] font-semibold">{ __( 'Checkout Experience & Protection Engine', 'twinspot-lite' ) }<Badge>{ __( 'Live simulation', 'twinspot-lite' ) }</Badge></h2>
+						<p className="text-muted">{ __( 'Inspect how shoppers experience gentle coupon gatekeeping and tune back-office enforcement.', 'twinspot-lite' ) }</p>
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
@@ -80,56 +70,109 @@ function Preview( { draft }: { draft: SettingsData } ) {
 							<button key={ v } type="button" onClick={ () => { setView( v ); setDismissed( false ); } } className={ cn( 'rounded-md px-3 py-1.5 text-[13px]', view === v ? 'bg-primary-soft font-semibold text-primary' : 'text-muted' ) }>{ l }</button>
 						) ) }
 					</div>
-					<Button variant="secondary" onClick={ reset }><RotateCcw size={ 14 } />{ __( 'Reset', 'twinspot-lite' ) }</Button>
+					<Button variant="secondary" onClick={ reset }><RotateCcw size={ 14 } />{ __( 'Reset Demo', 'twinspot-lite' ) }</Button>
 				</div>
+			</Card>
+
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<h3 className="flex items-center gap-2 text-[15px] font-semibold"><Store size={ 16 } className="text-primary" />{ __( 'Demo Store Checkout — Clean & Polite Customer Experience', 'twinspot-lite' ) }</h3>
+				<span className="flex items-center gap-2 text-[12px] font-medium"><span className="h-2 w-2 rounded-full bg-accent" />{ __( 'Simulated Shopper: repeat buyer using guest checkout', 'twinspot-lite' ) }</span>
 			</div>
 
-			<div className="mt-5 grid gap-5 rounded-xl border border-line bg-primary-soft/40 p-5 md:grid-cols-[3fr_2fr]">
-				<div className="space-y-4">
-					<div className="rounded-lg bg-white p-4">
-						<p className="font-semibold">{ __( '1. Contact & Shipping', 'twinspot-lite' ) }</p>
-						<p className="mt-1 text-muted">Alex Mercer (Guest) · mercer.design@example.org<br />742 Evergreen Terrace, Springfield, OR 97477</p>
-					</div>
-					<div className="rounded-lg bg-white p-4">
-						<p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">{ view === 'block' ? __( 'WooCommerce Checkout Block', 'twinspot-lite' ) : '[woocommerce_checkout]' }</p>
-						<p className="font-semibold">{ view === 'block' ? __( 'Have a promo code?', 'twinspot-lite' ) : __( 'Have a coupon? Click here to enter your code', 'twinspot-lite' ) }</p>
-						<div className="mt-2 flex gap-2">
-							<div className="flex h-9 flex-1 items-center rounded-md border border-line px-3 font-mono text-[13px]">WELCOME20</div>
-							<Button className="pointer-events-none">{ view === 'block' ? __( 'Apply', 'twinspot-lite' ) : __( 'Apply coupon', 'twinspot-lite' ) }</Button>
-						</div>
-						<div className="mt-3">
-							{ blocked && ! ( dismissed && view === 'block' ) && notice }
-							{ ! blocked && <div className="flex items-center gap-2 rounded-lg border border-success-line bg-success-soft p-3 text-success"><Check size={ 16 } />{ __( 'Coupon code applied successfully.', 'twinspot-lite' ) }</div> }
-						</div>
-						<p className="mt-2 flex items-center gap-2 text-[12px] text-muted"><CheckCircle2 size={ 14 } />{ __( 'Shoppers never see risk scores, fingerprints or internal triggers.', 'twinspot-lite' ) }</p>
-					</div>
+			<Card className="overflow-hidden">
+				<div className="flex items-center gap-3 border-b border-line bg-primary-soft px-4 py-2.5">
+					<span className="flex gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-slate-300" /><i className="h-2.5 w-2.5 rounded-full bg-slate-300" /><i className="h-2.5 w-2.5 rounded-full bg-slate-300" /></span>
+					<span className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1 font-mono text-[12px] text-muted"><Lock size={ 12 } />mystore.local/checkout/</span>
+					<span className="ml-auto text-[11px] font-semibold uppercase tracking-wide text-muted">{ __( 'Frontend storefront canvas', 'twinspot-lite' ) }</span>
 				</div>
-				<div className="space-y-4">
-					<div className="rounded-lg bg-white p-4">
-						<p className="font-semibold">{ __( 'Order Summary', 'twinspot-lite' ) }</p>
-						{ items.map( ( i ) => (
-							<div key={ i.name } className="mt-3 flex justify-between gap-3"><span>{ i.name }<span className="block text-[12px] text-muted">{ i.note }</span></span><span className="tabular">{ money( i.price ) }</span></div>
-						) ) }
-						<div className="mt-3 space-y-1 border-t border-line pt-3 text-muted">
-							<div className="flex justify-between"><span>{ __( 'Subtotal', 'twinspot-lite' ) }</span><span className="tabular">{ money( subtotal ) }</span></div>
-							<div className="flex justify-between"><span>{ __( 'Shipping', 'twinspot-lite' ) }</span><span className="tabular">{ money( 5 ) }</span></div>
-							<div className={ cn( 'flex justify-between', blocked ? 'text-danger' : 'text-success' ) }>
-								<span>WELCOME20</span><span className="tabular">{ blocked ? __( 'Not applied', 'twinspot-lite' ) : '−' + money( discount ) }</span>
+				<div className="grid gap-5 p-5 md:grid-cols-[3fr_2fr]">
+					<div className="space-y-4">
+						<div className="rounded-xl border border-line p-4">
+							<div className="flex items-center justify-between"><p className="font-semibold">{ __( '1. Contact & Shipping', 'twinspot-lite' ) }</p><span className="text-[12px] text-primary">{ __( 'Edit', 'twinspot-lite' ) }</span></div>
+							<div className="mt-2 flex items-start gap-3">
+								<span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-muted"><User size={ 16 } /></span>
+								<p className="text-muted"><span className="font-medium text-ink">Alex Mercer (Guest)</span><br />mercer.design@example.org • +1 (555) 019-8234<br />742 Evergreen Terrace, Springfield, OR 97477</p>
 							</div>
 						</div>
-						<div className="mt-3 flex items-end justify-between border-t border-line pt-3"><span className="font-semibold">{ __( 'Total due', 'twinspot-lite' ) }</span><span className="tabular text-[20px] font-semibold">{ money( total ) }</span></div>
+
+						<div className="flex items-center gap-2 text-[12px]">
+							<span className="rounded bg-primary-tint px-2 py-1 font-semibold uppercase tracking-wide text-primary">{ block ? __( 'WooCommerce Checkout Block', 'twinspot-lite' ) : __( 'Classic WooCommerce Shortcode', 'twinspot-lite' ) }</span>
+							<span className="text-muted">{ block ? __( 'Modern Accordion Layout', 'twinspot-lite' ) : '[woocommerce_checkout] ' + __( 'Template', 'twinspot-lite' ) }</span>
+						</div>
+
+						<div className="rounded-xl border border-line p-4">
+							{ block ? (
+								<div className="flex items-center justify-between"><p className="font-semibold">{ __( 'Have a promo code?', 'twinspot-lite' ) }</p><span className="text-[12px] text-muted">{ __( 'First-purchase promotions', 'twinspot-lite' ) }</span></div>
+							) : (
+								<p className="flex items-center gap-2 rounded-lg bg-primary-soft px-3 py-2 text-muted"><Ticket size={ 16 } />{ __( 'Have a coupon? Click here to enter your code', 'twinspot-lite' ) }</p>
+							) }
+							<div className="mt-3 flex gap-2">
+								<div className="flex h-9 flex-1 items-center gap-2 rounded-md border border-line px-3 font-mono text-[13px] font-medium"><Tag size={ 14 } className="text-muted" />WELCOME20</div>
+								<Button className="pointer-events-none">{ block ? __( 'Apply', 'twinspot-lite' ) : __( 'Apply coupon', 'twinspot-lite' ) }</Button>
+							</div>
+							<div className="mt-3">
+								{ blocked && ! ( dismissed && block ) && (
+									<div role="alert" className="flex items-start gap-3 rounded-lg border border-danger-line bg-danger-soft p-3 text-danger">
+										<Info size={ 16 } className="mt-0.5" />
+										<div className="flex-1">
+											<p className="font-medium">{ __( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ) }</p>
+											{ block && <p className="text-[12px] text-muted">{ __( 'If you have another offer code or store gift card, feel free to enter it above.', 'twinspot-lite' ) }</p> }
+										</div>
+										{ block && <button type="button" aria-label={ __( 'Dismiss', 'twinspot-lite' ) } onClick={ () => setDismissed( true ) }><X size={ 14 } /></button> }
+									</div>
+								) }
+								{ ! blocked && <div className="flex items-center gap-2 rounded-lg border border-success-line bg-success-soft p-3 text-success"><Check size={ 16 } />{ __( 'Coupon code applied successfully.', 'twinspot-lite' ) }</div> }
+							</div>
+							<p className="mt-2 flex items-center gap-2 text-[12px] text-muted"><CheckCircle2 size={ 14 } /><span><b>{ __( 'Non-intrusive shopper messaging:', 'twinspot-lite' ) }</b> { __( 'zero mention of risk scoring, fingerprints, or internal triggers.', 'twinspot-lite' ) }</span></p>
+						</div>
+
+						<div className="rounded-xl border border-line p-4">
+							<p className="font-semibold">{ __( '2. Payment Method', 'twinspot-lite' ) }</p>
+							<div className="mt-2 grid grid-cols-2 gap-2">
+								{ ( [ [ 'card', __( 'Credit Card', 'twinspot-lite' ), <CreditCard key="c" size={ 16 } /> ], [ 'wallet', __( 'Digital Wallet', 'twinspot-lite' ), <Wallet key="w" size={ 16 } /> ] ] as [ 'card' | 'wallet', string, React.ReactNode ][] ).map( ( [ k, l, i ] ) => (
+									<button key={ k } type="button" onClick={ () => setPay( k ) } className={ cn( 'flex items-center gap-2 rounded-md border px-3 py-2.5', pay === k ? 'border-primary bg-primary-soft font-medium text-primary' : 'border-line text-muted' ) }>{ i }{ l }</button>
+								) ) }
+							</div>
+						</div>
+						<div className="flex h-11 items-center justify-center gap-2 rounded-lg bg-primary font-semibold text-white"><Lock size={ 16 } />{ __( 'Place Order', 'twinspot-lite' ) } • { money( total ) }</div>
 					</div>
-					<div className="rounded-lg bg-white p-4 text-[13px]">
-						<p className="flex items-center gap-2 font-semibold text-primary"><Store size={ 14 } />{ __( 'What happens behind the scenes', 'twinspot-lite' ) }</p>
-						<p className="mt-1 text-muted">
-							{ blocked && __( 'This shopper earlier placed an order with the same email, phone or address. The coupon is refused politely.', 'twinspot-lite' ) }
-							{ ! blocked && draft.hold && __( 'The coupon works, but the order is placed On hold with a note so you can review it.', 'twinspot-lite' ) }
-							{ ! blocked && ! draft.hold && __( 'Protection is off. The coupon works and the order goes through as normal.', 'twinspot-lite' ) }
-						</p>
+
+					<div className="space-y-4">
+						<div className="rounded-xl border border-line p-4">
+							<div className="flex items-center justify-between"><p className="font-semibold">{ __( 'Order Summary', 'twinspot-lite' ) }</p><span className="rounded bg-primary-tint px-2 py-0.5 text-[11px] font-semibold text-primary">{ __( '2 Items', 'twinspot-lite' ) }</span></div>
+							{ items.map( ( i ) => (
+								<div key={ i.name } className="mt-3 flex items-center gap-3">
+									<span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-tint text-primary"><Package size={ 18 } /><span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-ink text-[10px] text-white">1</span></span>
+									<span className="flex-1">{ i.name }<span className="block text-[12px] text-muted">{ i.note }</span></span>
+									<span className="tabular font-medium">{ money( i.price ) }</span>
+								</div>
+							) ) }
+							<div className="mt-3 space-y-1 border-t border-line pt-3 text-muted">
+								<div className="flex justify-between"><span>{ __( 'Subtotal', 'twinspot-lite' ) }</span><span className="tabular">{ money( subtotal ) }</span></div>
+								<div className="flex justify-between"><span>{ __( 'Shipping (Standard Ground)', 'twinspot-lite' ) }</span><span className="tabular">{ money( 5 ) }</span></div>
+								<div className={ cn( 'flex items-center justify-between rounded-md px-2 py-1.5', blocked ? 'bg-danger-soft text-danger' : 'bg-success-soft text-success' ) }>
+									<span className="flex items-center gap-1.5">{ blocked ? <XCircle size={ 14 } /> : <Check size={ 14 } /> }Coupon WELCOME20</span>
+									<span className="tabular text-[12px] font-semibold">{ blocked ? __( 'Not applied ($0.00)', 'twinspot-lite' ) : '−' + money( discount ) }</span>
+								</div>
+							</div>
+							<div className="mt-3 flex items-end justify-between border-t border-line pt-3">
+								<span><span className="block font-semibold">{ __( 'Total Due', 'twinspot-lite' ) }</span><span className="text-[12px] text-muted">{ __( 'Includes all local taxes', 'twinspot-lite' ) }</span></span>
+								<span className="tabular text-[22px] font-semibold">{ money( total ) }</span>
+							</div>
+							<p className="mt-3 flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-[12px] text-muted"><ShieldCheck size={ 14 } />{ __( 'Protected by 256-bit encrypted checkout • 30-day guarantee', 'twinspot-lite' ) }</p>
+						</div>
+						<div className="rounded-xl bg-primary-soft p-4 text-[13px]">
+							<p className="flex items-center gap-2 font-semibold text-primary"><ScanSearch size={ 14 } />{ __( 'Twinspot Store Engine Audit', 'twinspot-lite' ) }</p>
+							<p className="mt-1 text-muted">
+								{ blocked && __( 'Buyer previously placed Order #4891 with the same email, phone or address. Coupon WELCOME20 restricted politely without customer embarrassment.', 'twinspot-lite' ) }
+								{ ! blocked && draft.hold && __( 'Buyer previously placed Order #4891 with the same email, phone or address. Coupon WELCOME20 accepted and the order is placed On hold for your review.', 'twinspot-lite' ) }
+								{ ! blocked && ! draft.hold && __( 'Protection is off. Coupon WELCOME20 accepted and the order goes through as normal.', 'twinspot-lite' ) }
+							</p>
+						</div>
 					</div>
 				</div>
-			</div>
-		</Card>
+			</Card>
+		</div>
 	);
 }
 
@@ -159,8 +202,18 @@ export function Settings( { saved, onSave }: { saved: SettingsData; onSave: ( s:
 	return (
 		<div className="space-y-6">
 			<Preview draft={ draft } />
+			<div className="flex flex-wrap items-end justify-between gap-2">
+				<div>
+					<h2 className="text-[20px] font-semibold">{ __( 'Plugin Configuration', 'twinspot-lite' ) }</h2>
+					<p className="text-muted">WooCommerce &gt; Twinspot &gt; { __( 'Settings', 'twinspot-lite' ) }</p>
+				</div>
+				<span className="flex items-center gap-1.5 font-medium text-primary"><CheckCircle2 size={ 16 } />{ draft.enabled || draft.hold ? __( 'Policy Engine: Active', 'twinspot-lite' ) : __( 'Policy Engine: Paused', 'twinspot-lite' ) }</span>
+			</div>
 			<Card className="p-6">
-				<h2 className="text-[16px] font-semibold">{ __( 'Coupon Protection Rules', 'twinspot-lite' ) }</h2>
+				<div className="flex flex-wrap items-start justify-between gap-2">
+					<h2 className="text-[16px] font-semibold">{ __( 'Coupon Protection Rules', 'twinspot-lite' ) }</h2>
+					<Badge tone="quiet">{ __( 'Standard WooCommerce Storefront', 'twinspot-lite' ) }</Badge>
+				</div>
 				<p className="text-muted">{ __( 'Applies to coupons marked “New customers only (Twinspot)”, on both classic and block checkout.', 'twinspot-lite' ) }</p>
 				<div className="mt-5 space-y-4">
 					<Row icon={ <Ban size={ 18 } /> } title={ __( 'Block repeat coupons automatically', 'twinspot-lite' ) } control={ <Toggle on={ draft.enabled } onChange={ setBlock } label={ __( 'Block repeat coupons automatically', 'twinspot-lite' ) } /> }>
