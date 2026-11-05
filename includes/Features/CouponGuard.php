@@ -52,7 +52,7 @@ class CouponGuard implements Module {
 	}
 
 	public function validate( $valid, $coupon ) {
-		if ( ! $valid || 'yes' !== $coupon->get_meta( self::META ) || ! WC()->customer ) {
+		if ( ! $valid || 'no' === get_option( 'twinspot_lite_enabled' ) || 'yes' !== $coupon->get_meta( self::META ) || ! WC()->customer ) {
 			return $valid;
 		}
 		$c = WC()->customer;

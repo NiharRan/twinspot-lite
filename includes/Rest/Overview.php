@@ -40,7 +40,9 @@ class Overview {
 		}
 		$all_rings = Rings::find( $rows );
 
-		$stats = array(
+		$in_rings = array_merge( array(), ...$all_rings );
+		$stats    = array(
+			'ring_customers'  => count( array_unique( array_filter( array_map( fn( $id ) => $by_id[ $id ]['email_h'], $in_rings ) ) ) ),
 			'indexed'         => count( $rows ),
 			'rings'           => count( $all_rings ),
 			'orders_in_rings' => array_sum( array_map( 'count', $all_rings ) ),

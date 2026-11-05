@@ -16,4 +16,10 @@ export interface ImportBatch {
 
 export const importBatch = ( page: number ) => apiFetch< ImportBatch >( { path: `${ base }/import?page=${ page }`, method: 'POST' } );
 
+export const getActivity = () => apiFetch< { days: Record< string, number > } >( { path: `${ base }/activity` } );
+
+export const getSettings = () => apiFetch< { enabled: boolean } >( { path: `${ base }/settings` } );
+
+export const saveSettings = ( enabled: boolean ) => apiFetch< { enabled: boolean } >( { path: `${ base }/settings`, method: 'POST', data: { enabled } } );
+
 export const setSample = ( on: boolean ) => apiFetch( { path: `${ base }/sample`, method: on ? 'POST' : 'DELETE' } );

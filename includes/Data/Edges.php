@@ -74,7 +74,7 @@ class Edges {
 	}
 
 	/**
-	 * Ids of other orders sharing email, phone or address (IP is too weak to match on).
+	 * Ids of other real orders sharing email, phone or address (IP is too weak to match on). Sample rows never match.
 	 */
 	public function matches( array $h, int $exclude = 0 ): array {
 		global $wpdb;
@@ -87,7 +87,7 @@ class Edges {
 		if ( ! $where ) {
 			return array();
 		}
-		$sql = $wpdb->prepare( "SELECT order_id FROM {$this->table()} WHERE order_id <> %d AND (" . implode( ' OR ', $where ) . ') LIMIT 20', $exclude ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- parts prepared above.
+		$sql = $wpdb->prepare( "SELECT order_id FROM {$this->table()} WHERE order_id <> %d AND order_id < %d AND (" . implode( ' OR ', $where ) . ') LIMIT 20', $exclude, self::SAMPLE_BASE ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- parts prepared above.
 		return array_map( 'intval', $wpdb->get_col( $sql ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 	}
 }

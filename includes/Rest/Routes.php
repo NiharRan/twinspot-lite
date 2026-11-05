@@ -7,6 +7,7 @@
 
 namespace Twinspot_Lite\Rest;
 
+use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Features\Importer;
 use Twinspot_Lite\Module;
 
@@ -20,7 +21,11 @@ class Routes implements Module {
 	/** @var Importer */
 	private $importer;
 
-	public function __construct( Overview $overview, Importer $importer ) {
+	/** @var BlockLog */
+	private $log;
+
+	public function __construct( Overview $overview, Importer $importer, BlockLog $log ) {
+		$this->log      = $log;
 		$this->overview = $overview;
 		$this->importer = $importer;
 	}
@@ -84,6 +89,29 @@ class Routes implements Module {
 						'default' => 1,
 					),
 				),
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
+			'/activity',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => $permission,
+				'callback'            => fn() => array( 'days' => $this->log->days() ),
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
+			'/settings',
+			array(
+				'methods'             => array( 'GET', 'POST' ),
+				'permission_callback' => $permission,
+				'callback'            => function ( \WP_REST_Request $req ) {
+					if ( 'POST' === $req->get_method() ) {
+						update_option( 'twinspot_lite_enabled', rest_sanitize_boolean( $req->get_param( 'enabled' ) ) ? 'yes' : 'no' );
+					}
+					return array( 'enabled' => 'no' !== get_option( 'twinspot_lite_enabled' ) );
+				},
 			)
 		);
 		register_rest_route(

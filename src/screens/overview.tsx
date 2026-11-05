@@ -2,7 +2,7 @@ import { useState } from '@wordpress/element';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { motion } from 'motion/react';
 import {
-	AlertTriangle, ArrowRight, AtSign, CheckCircle2, ChevronLeft, ChevronRight, Home, Link2, Lock, MapPin,
+	AlertTriangle, ArrowRight, Hash, AtSign, CheckCircle2, ChevronLeft, ChevronRight, Home, Link2, Lock, MapPin,
 	Network, Phone, ReceiptText, RefreshCw, RotateCcw, Search, ShieldCheck, TicketCheck, Users, User, ShoppingCart, Check, FlaskConical, X,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -20,7 +20,7 @@ const LINK_LABEL: Record< LinkType, string > = {
 
 const fade = { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.25 } };
 
-function Stat( { label, value, icon: Icon, tone, index }: { label: string; value: number; icon: typeof AtSign; tone: string; index: number } ) {
+function Stat( { label, value, icon: Icon, tone, index, hint }: { label: string; value: number; icon: typeof AtSign; tone: string; index: number; hint?: string } ) {
 	return (
 		<motion.div { ...fade } transition={ { ...fade.transition, delay: index * 0.06 } }>
 			<Card className="p-5">
@@ -31,9 +31,15 @@ function Stat( { label, value, icon: Icon, tone, index }: { label: string; value
 					</span>
 				</div>
 				<div className="tabular mt-3 text-[32px] font-semibold leading-10">{ value }</div>
+					{ hint && <p className="mt-1 text-[13px] text-muted">{ hint }</p> }
 			</Card>
 		</motion.div>
 	);
+}
+
+function lastOrder( iso: string ): string {
+	const days = Math.round( ( new Date( iso ).getTime() - Date.now() ) / 864e5 );
+	return days > -7 ? new Intl.RelativeTimeFormat( undefined, { numeric: 'auto' } ).format( days, 'day' ) : new Date( iso ).toLocaleDateString();
 }
 
 function SizeBadge( { size }: { size: number } ) {
@@ -44,17 +50,17 @@ function SizeBadge( { size }: { size: number } ) {
 	if ( size === 4 ) {
 		return <Badge tone="warn"><AlertTriangle size={ 14 } />{ label }</Badge>;
 	}
-	return <Badge tone="neutral"><Link2 size={ 14 } />{ label }</Badge>;
+	return size === 3 ? <Badge tone="quiet"><Link2 size={ 14 } />{ label }</Badge> : <Badge tone="neutral"><Hash size={ 14 } />{ label }</Badge>;
 }
 
-interface TableProps {
+export interface TableProps {
 	data: OverviewData;
 	filters: Filters;
 	setFilters: ( f: Partial< Filters > ) => void;
 	setPage: ( p: number ) => void;
 }
 
-function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
+export function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 	const { rings, total, total_pages: pages } = data;
 	const reset = () => setFilters( { search: '', min_size: 2, link: '' } );
 	return (
@@ -91,11 +97,12 @@ function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 						<th className="px-5 py-3">{ __( 'Orders', 'twinspot-lite' ) }</th>
 						<th className="px-5 py-3 text-right">{ __( 'Total spent', 'twinspot-lite' ) }</th>
 						<th className="px-5 py-3">{ __( 'Last order', 'twinspot-lite' ) }</th>
+							<th className="px-5 py-3 text-right">{ __( 'Action', 'twinspot-lite' ) }</th>
 					</tr>
 				</thead>
 				<tbody>
 					{ rings.length === 0 && (
-						<tr><td colSpan={ 5 } className="px-5 py-10 text-center text-muted">{ __( 'No rings match these filters.', 'twinspot-lite' ) }</td></tr>
+						<tr><td colSpan={ 6 } className="px-5 py-10 text-center text-muted">{ __( 'No rings match these filters.', 'twinspot-lite' ) }</td></tr>
 					) }
 					{ rings.map( ( ring, i ) => (
 						<motion.tr
@@ -110,7 +117,7 @@ function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 								<div className="flex flex-wrap gap-1.5">
 									{ ring.links.map( ( l ) => {
 										const Icon = LINK_ICON[ l ];
-										return <Badge key={ l } tone="quiet" className="py-0.5 text-[12px]"><Icon size={ 13 } />{ LINK_LABEL[ l ] }</Badge>;
+										return <Badge key={ l } tone="quiet" className="py-0.5 text-[12px]"><Icon size={ 13 } />{ ring.links.length === 1 ? sprintf( __( '%s only', 'twinspot-lite' ), LINK_LABEL[ l ] ) : LINK_LABEL[ l ] }</Badge>;
 									} ) }
 								</div>
 							</td>
@@ -124,7 +131,7 @@ function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 							</td>
 							<td className="tabular px-5 py-4 text-right">{ ring.total }</td>
 							<td className="px-5 py-4 text-muted">
-								{ ring.last_order ? new Date( ring.last_order ).toLocaleDateString() : '—' }
+								{ ring.last_order ? lastOrder( ring.last_order ) : '—' }
 							</td>
 						</motion.tr>
 					) ) }
@@ -280,9 +287,9 @@ export function Overview( { data, error, filters, setFilters, setPage, importing
 
 			{ data && ! empty && (
 				<div className="grid gap-5 md:grid-cols-3">
-					<Stat index={ 0 } label={ __( 'Rings found', 'twinspot-lite' ) } value={ data.stats.rings } icon={ Network } tone="bg-info text-primary" />
-					<Stat index={ 1 } label={ __( 'Orders in rings', 'twinspot-lite' ) } value={ data.stats.orders_in_rings } icon={ ReceiptText } tone="bg-info text-primary" />
-					<Stat index={ 2 } label={ __( 'Coupons blocked (30 days)', 'twinspot-lite' ) } value={ data.stats.blocked_30d } icon={ TicketCheck } tone="bg-primary-tint text-primary" />
+					<Stat index={ 0 } label={ __( 'Rings found', 'twinspot-lite' ) } value={ data.stats.rings } hint={ sprintf( _n( 'Across %d customer', 'Across %d customers', data.stats.ring_customers, 'twinspot-lite' ), data.stats.ring_customers ) } icon={ Network } tone="bg-info text-primary" />
+					<Stat index={ 1 } label={ __( 'Orders in rings', 'twinspot-lite' ) } value={ data.stats.orders_in_rings } hint={ sprintf( __( '%s%% of indexed orders', 'twinspot-lite' ), ( data.stats.indexed ? ( data.stats.orders_in_rings / data.stats.indexed ) * 100 : 0 ).toFixed( 1 ) ) } icon={ ReceiptText } tone="bg-info text-primary" />
+					<Stat index={ 2 } label={ __( 'Coupons blocked (30 days)', 'twinspot-lite' ) } value={ data.stats.blocked_30d } hint={ __( 'In the last 30 days', 'twinspot-lite' ) } icon={ TicketCheck } tone="bg-primary-tint text-primary" />
 				</div>
 			) }
 			{ data && ( empty ? <EmptyState onImport={ onImport } onSample={ onSample } importing={ importing } progress={ progress } /> : <RingsTable data={ data } filters={ filters } setFilters={ setFilters } setPage={ setPage } /> ) }

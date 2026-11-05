@@ -12,6 +12,7 @@ export interface Ring {
 export interface Stats {
 	indexed: number;
 	rings: number;
+	ring_customers: number;
 	orders_in_rings: number;
 	blocked_30d: number;
 	customers: number;
@@ -33,3 +34,5 @@ export interface Filters {
 	link: '' | LinkType;
 	page: number;
 }
+
+export type Tab = 'overview' | 'accounts' | 'rules' | 'activity' | 'settings';

@@ -1,15 +1,22 @@
 import { useCallback, useEffect, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { MotionConfig } from 'motion/react';
-import { getOverview, importBatch, setSample } from './lib/api';
+import { getOverview, getSettings, importBatch, saveSettings, setSample } from './lib/api';
+import { Header } from './components/header';
+import { Accounts } from './screens/accounts';
+import { Activity } from './screens/activity';
 import { Overview } from './screens/overview';
-import type { Filters, Overview as OverviewData } from './types';
+import { Rules } from './screens/rules';
+import { Settings } from './screens/settings';
+import type { Filters, Overview as OverviewData, Tab } from './types';
 
 export function App() {
 	const [ filters, setFilters ] = useState< Filters >( { search: '', min_size: 2, link: '', page: 1 } );
 	const [ data, setData ] = useState< OverviewData | null >( null );
 	const [ error, setError ] = useState( '' );
 	const [ importing, setImporting ] = useState( false );
+	const [ tab, setTab ] = useState< Tab >( 'overview' );
+	const [ enabled, setEnabled ] = useState( true );
 	const [ progress, setProgress ] = useState( 0 );
 	const [ imported, setImported ] = useState< { n: number; seconds: number } | null >( null );
 
@@ -18,6 +25,18 @@ export function App() {
 			.then( setData )
 			.catch( ( e: Error ) => setError( e.message ) );
 	}, [ filters ] );
+
+	useEffect( () => {
+		getSettings().then( ( r ) => setEnabled( r.enabled ) ).catch( () => {} );
+	}, [] );
+
+	const toggleEnabled = ( on: boolean ) => {
+		setEnabled( on );
+		saveSettings( on ).catch( ( e: Error ) => {
+			setEnabled( ! on );
+			setError( e.message );
+		} );
+	};
 
 	useEffect( () => {
 		const t = setTimeout( load, filters.search ? 250 : 0 ); // Debounce typing only.
@@ -68,19 +87,27 @@ export function App() {
 
 	return (
 		<MotionConfig reducedMotion="user">
-			<Overview
-				data={ data }
-				error={ error }
-				filters={ filters }
-				setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) }
-				setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) }
-				importing={ importing }
-				progress={ progress }
-				imported={ imported }
-				dismissImported={ () => setImported( null ) }
-				onImport={ runImport }
-				onSample={ toggleSample }
-			/>
+			<Header tab={ tab } setTab={ setTab } enabled={ enabled } />
+			{ error && tab !== 'overview' && <div role="alert" className="mb-5 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div> }
+			{ tab === 'overview' && (
+				<Overview
+					data={ data }
+					error={ error }
+					filters={ filters }
+					setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) }
+					setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) }
+					importing={ importing }
+					progress={ progress }
+					imported={ imported }
+					dismissImported={ () => setImported( null ) }
+					onImport={ runImport }
+					onSample={ toggleSample }
+				/>
+			) }
+			{ tab === 'accounts' && <Accounts data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
+			{ tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
+			{ tab === 'activity' && <Activity /> }
+			{ tab === 'settings' && <Settings enabled={ enabled } setEnabled={ toggleEnabled } /> }
 		</MotionConfig>
 	);
 }
