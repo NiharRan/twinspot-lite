@@ -59,9 +59,9 @@ class Activity {
 		);
 	}
 
-	/** @return array{filename:string,csv:string} Up to 5000 events matching the filters. */
+	/** @return array{filename:string,csv:string} Up to 1000 events matching the filters. */
 	public function export( array $args ): array {
-		$res = $this->build( array( 'page' => 1, 'per_page' => 5000 ) + $args );
+		$res = $this->build( array( 'page' => 1, 'per_page' => 1000 ) + $args );
 		$csv = Csv::row( array( 'Time (UTC)', 'Event', 'Coupon', 'Order', 'Linked orders', 'Matched on', 'Ring', 'Ring orders', 'Amount' ) );
 		foreach ( $res['events'] as $e ) {
 			$csv .= Csv::row(
@@ -130,6 +130,11 @@ class Activity {
 	}
 
 	private function order_ref( int $id ): array {
+		static $seen = array(); // Export repeats the same linked orders across many rows.
+		return $seen[ $id ] ??= $this->load_order_ref( $id );
+	}
+
+	private function load_order_ref( int $id ): array {
 		$o       = wc_get_order( $id );
 		$created = $o ? $o->get_date_created() : null;
 		return array(

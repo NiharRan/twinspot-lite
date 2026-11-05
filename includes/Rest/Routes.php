@@ -83,8 +83,11 @@ class Routes implements Module {
 				'permission_callback' => $permission,
 				'callback'            => function ( \WP_REST_Request $req ) {
 					$ring = $this->overview->detail( (int) $req['order_id'] );
+					if ( null === $ring ) {
+						return new \WP_Error( 'twinspot_lite_no_ring', __( 'This order is not in a ring.', 'twinspot-lite' ), array( 'status' => 404 ) );
+					}
 					unset( $ring['ids'] );
-					return $ring ?? new \WP_Error( 'twinspot_lite_no_ring', __( 'This order is not in a ring.', 'twinspot-lite' ), array( 'status' => 404 ) );
+					return $ring;
 				},
 			)
 		);
@@ -123,6 +126,7 @@ class Routes implements Module {
 					'page' => array(
 						'type'    => 'integer',
 						'default' => 1,
+						'minimum' => 1,
 					),
 				),
 			)
@@ -153,11 +157,23 @@ class Routes implements Module {
 			array(
 				'methods'             => array( 'GET', 'POST' ),
 				'permission_callback' => $permission,
+				'args'                => array(
+					'enabled' => array( 'type' => 'boolean' ),
+					'hold'    => array( 'type' => 'boolean' ),
+				),
 				'callback'            => function ( \WP_REST_Request $req ) {
 					if ( 'POST' === $req->get_method() ) {
-						$hold = rest_sanitize_boolean( $req->get_param( 'hold' ) );
-						update_option( 'twinspot_lite_enabled', ! $hold && rest_sanitize_boolean( $req->get_param( 'enabled' ) ) ? 'yes' : 'no' ); // Block and hold are exclusive.
-						update_option( 'twinspot_lite_hold_orders', $hold ? 'yes' : 'no' );
+						// Only keys that were sent change; block and hold are exclusive, and the one just turned on wins.
+						if ( $req->has_param( 'hold' ) ) {
+							$hold = rest_sanitize_boolean( $req->get_param( 'hold' ) );
+							update_option( 'twinspot_lite_hold_orders', $hold ? 'yes' : 'no' );
+							$hold && update_option( 'twinspot_lite_enabled', 'no' );
+						}
+						if ( $req->has_param( 'enabled' ) ) {
+							$on = rest_sanitize_boolean( $req->get_param( 'enabled' ) );
+							update_option( 'twinspot_lite_enabled', $on ? 'yes' : 'no' );
+							$on && ! $req->has_param( 'hold' ) && update_option( 'twinspot_lite_hold_orders', 'no' );
+						}
 					}
 					return array(
 						'enabled' => 'no' !== get_option( 'twinspot_lite_enabled' ),
