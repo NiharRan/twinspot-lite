@@ -67,6 +67,7 @@ class OrderTracker implements Module {
 	/** New checkout order: index it, then hold it if hold mode is on and a "new customers only" coupon was used by a repeat shopper. */
 	public function created( $order ): void {
 		$this->record( $order );
+		$this->note_blocked_coupon( $order );
 		if ( ! $order instanceof \WC_Order || 'yes' !== get_option( 'twinspot_lite_hold_orders' ) || 'no' !== get_option( 'twinspot_lite_enabled' ) ) {
 			return; // With blocking on, the coupon was already refused at checkout.
 		}
@@ -81,6 +82,42 @@ class OrderTracker implements Module {
 		}
 	}
 
+	/** Order note for a coupon the guard refused earlier in this checkout session. */
+	private function note_blocked_coupon( $order ): void {
+		$b = WC()->session ? WC()->session->get( 'twinspot_lite_blocked_coupon' ) : null;
+		if ( ! $order instanceof \WC_Order || ! $b ) {
+			return;
+		}
+		WC()->session->set( 'twinspot_lite_blocked_coupon', null );
+		$ids = array_values( array_diff( (array) $b['ids'], array( $order->get_id() ) ) );
+		$order->add_order_note(
+			sprintf(
+				/* translators: 1: Twinspot label, 2: linked order numbers, 3: coupon code, 4: ring link */
+				__( '%1$s shares email, phone or address with order(s) %2$s. Blocked coupon “%3$s” at checkout. %4$s', 'twinspot-lite' ),
+				'<strong>' . esc_html__( 'Twinspot System Alert', 'twinspot-lite' ) . ':</strong>',
+				$ids ? $this->links( $ids ) : esc_html__( '(none left)', 'twinspot-lite' ),
+				esc_html( $b['code'] ),
+				$this->ring_link( $order->get_id(), count( $ids ) + 1 )
+			)
+		);
+	}
+
+	/** @param int[] $ids */
+	private function links( array $ids ): string {
+		$out = array();
+		foreach ( $ids as $id ) {
+			$o     = wc_get_order( $id );
+			$out[] = $o ? '<a href="' . esc_url( $o->get_edit_order_url() ) . '">#' . (int) $id . '</a>' : '#' . (int) $id;
+		}
+		return implode( ', ', $out );
+	}
+
+	private function ring_link( int $order_id, int $orders ): string {
+		$url = add_query_arg( array( 'page' => 'twinspot-lite', 'ring' => $order_id ), admin_url( 'admin.php' ) );
+		/* translators: 1: number of orders in the ring */
+		return esc_html( sprintf( _n( 'Linked ring: %d order.', 'Linked ring: %d orders.', $orders, 'twinspot-lite' ), $orders ) ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Inspect tree →', 'twinspot-lite' ) . '</a>';
+	}
+
 	public function record( $order ): void {
 		if ( ! $order instanceof \WC_Order ) {
 			return;
@@ -93,8 +130,8 @@ class OrderTracker implements Module {
 				sprintf(
 					/* translators: %s: list of order numbers, e.g. "#12, #15" */
 					__( 'Twinspot: shares email, phone or address with order(s) %s', 'twinspot-lite' ),
-					'#' . implode( ', #', $m )
-				)
+					$this->links( $m )
+				) . ' ' . $this->ring_link( $order->get_id(), count( $m ) + 1 )
 			);
 			$order->update_meta_data( '_twinspot_lite_noted', 1 );
 			$order->save();

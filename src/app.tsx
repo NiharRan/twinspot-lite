@@ -17,7 +17,7 @@ export function App() {
 	const [ error, setError ] = useState( '' );
 	const [ importing, setImporting ] = useState( false );
 	const [ tab, setTab ] = useState< Tab >( 'overview' );
-	const [ ringKey, setRingKey ] = useState< number | null >( null );
+	const [ ringKey, setRingKey ] = useState< number | null >( Number( new URLSearchParams( window.location.search ).get( 'ring' ) ) || null ); // ?ring=<order id> deep-links from order notes.
 	const [ settings, setSettings ] = useState< SettingsData >( { enabled: true, hold: false } );
 	const enabled = settings.enabled || settings.hold; // Hold mode still guards coupons, just without refusing them.
 	const [ progress, setProgress ] = useState( 0 );
