@@ -7,6 +7,7 @@
 
 namespace Twinspot_Lite\Features;
 
+use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
 use Twinspot_Lite\Data\Fingerprinter;
 use Twinspot_Lite\Module;
@@ -19,9 +20,13 @@ class Privacy implements Module {
 	/** @var Fingerprinter */
 	private $fingerprinter;
 
-	public function __construct( Edges $edges, Fingerprinter $fingerprinter ) {
+	/** @var BlockLog */
+	private $block_log;
+
+	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $block_log ) {
 		$this->edges         = $edges;
 		$this->fingerprinter = $fingerprinter;
+		$this->block_log     = $block_log;
 	}
 
 	public function register(): void {
@@ -88,8 +93,17 @@ class Privacy implements Module {
 
 	public function erase( $email ): array {
 		$rows = $this->rows_for_email( $email );
+		$hashes = array();
+		$ids    = array();
 		foreach ( $rows as $row ) {
+			$hashes[] = $row['email_h'];
+			$hashes[] = $row['phone_h'];
+			$hashes[] = $row['addr_h'];
+			$ids[]    = (int) $row['order_id'];
 			$this->edges->delete( (int) $row['order_id'] );
+		}
+		if ( $rows ) {
+			$this->block_log->forget( $hashes, $ids );
 		}
 		return array(
 			'items_removed'  => (bool) $rows,

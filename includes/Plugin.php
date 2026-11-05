@@ -57,7 +57,7 @@ class Plugin {
 			new Compat( $this->file ),
 			$tracker,
 			new CouponGuard( $edges, $prints, $log ),
-			new Privacy( $edges, $prints ),
+			new Privacy( $edges, $prints, $log ),
 			new Routes( new Overview( $edges, $prints, $log ), new Importer( $tracker, $edges, $prints ), $log ),
 			new Page( plugin_dir_path( $this->file ) ),
 		);

@@ -66,6 +66,25 @@ class BlockLog {
 		update_option( self::RINGS, $rings, false );
 	}
 
+	/** Erase support: drop these hashes from blocked rings and these order IDs from the event log. */
+	public function forget( array $hashes, array $order_ids ): void {
+		$hashes = array_filter( $hashes );
+		$rings  = array();
+		foreach ( $this->blocked_rings() as $key => $list ) {
+			$list = array_values( array_diff( $list, $hashes ) );
+			if ( $list ) {
+				$rings[ $key ] = $list;
+			}
+		}
+		update_option( self::RINGS, $rings, false );
+		$events = (array) get_option( self::EVENTS, array() );
+		foreach ( $events as &$e ) {
+			$e['ids'] = array_values( array_diff( $e['ids'], $order_ids ) );
+		}
+		unset( $e );
+		update_option( self::EVENTS, $events, false );
+	}
+
 	/** True if any of the shopper's hashes belongs to a blocked ring. */
 	public function is_blocked( array $h ): bool {
 		$mine = array_filter( array( $h['email_h'] ?? '', $h['phone_h'] ?? '', $h['addr_h'] ?? '' ) );
