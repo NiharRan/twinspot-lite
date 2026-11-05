@@ -68,10 +68,10 @@ class CouponGuard implements Module {
 		}
 		$c       = WC()->customer;
 		$h       = $this->fingerprinter->hashes( $c->get_billing_email(), $c->get_billing_phone(), $c->get_billing_address_1(), $c->get_billing_postcode() );
-		if ( $this->log->is_allowed( $h ) ) {
-			return $valid; // Admin allowed this ring (whitelist rule).
-		}
 		$blocked = $this->log->is_blocked( $h ); // Admin blocked this ring from every coupon.
+		if ( ! $blocked && $this->log->is_allowed( $h ) ) {
+			return $valid; // Admin allowed this ring (whitelist rule). A block always wins over an allow.
+		}
 		// Hold mode never refuses on the "new customers only" rule (OrderTracker holds the order), but admin-blocked rings stay refused.
 		if ( ! $blocked && ( ! $block || 'yes' !== $coupon->get_meta( self::META ) ) ) {
 			return $valid;
