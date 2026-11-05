@@ -1,0 +1,15 @@
+.git
+.gitattributes
+.gitignore
+.distignore
+.wordpress-org
+CLAUDE.md
+docs
+tests
+scripts
+dist
+.qodo
+.claude
+.idea
+.vscode
+.DS_Store
