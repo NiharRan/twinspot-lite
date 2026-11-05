@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Input, Select } from '../components/ui/input';
 import { Sheet } from '../components/ui/sheet';
+import { Spinner } from '../components/ui/spinner';
 import { allowRing, exportActivity, getActivity } from '../lib/api';
 import { cn } from '../lib/utils';
 import type { Activity as ActivityData, ActivityEvent, ActivityFilters, EventType, LinkType, OrderRef } from '../types';
@@ -237,6 +238,7 @@ export function Activity( { onOpen }: { onOpen: ( key: number ) => void } ) {
 	const [ error, setError ] = useState( '' );
 	const [ pick, setPick ] = useState< number | null >( null );
 	const [ busy, setBusy ] = useState( false );
+	const locked = useRef( false );
 	const change = ( p: Partial< ActivityFilters > ) => setF( ( old ) => ( { ...old, page: 1, ...p } ) );
 
 	const load = useCallback( () => getActivity( f ).then( ( r ) => { setData( r ); setError( '' ); } ).catch( ( e: Error ) => setError( e.message ) ), [ f ] );
@@ -273,9 +275,10 @@ export function Activity( { onOpen }: { onOpen: ( key: number ) => void } ) {
 		}
 	};
 	const toggleAllow = async () => {
-		if ( ! selected?.ring ) {
+		if ( ! selected?.ring || locked.current ) {
 			return;
 		}
+		locked.current = true;
 		setBusy( true );
 		try {
 			await allowRing( selected.ring.key, ! selected.ring.allowed );
@@ -283,6 +286,7 @@ export function Activity( { onOpen }: { onOpen: ( key: number ) => void } ) {
 		} catch ( e ) {
 			setError( ( e as Error ).message );
 		}
+		locked.current = false;
 		setBusy( false );
 	};
 
@@ -354,7 +358,7 @@ export function Activity( { onOpen }: { onOpen: ( key: number ) => void } ) {
 							</tr>
 						</thead>
 						<tbody>
-							{ data === null && ! error && <tr><td colSpan={ 7 } className="px-5 py-10 text-center text-muted">{ __( 'Loading…', 'twinspot-lite' ) }</td></tr> }
+							{ data === null && ! error && <tr><td colSpan={ 7 }><Spinner /></td></tr> }
 							{ data !== null && events.length === 0 && (
 								<tr><td colSpan={ 7 } className="px-5 py-10 text-center text-muted">{ filtering ? __( 'No events match these filters.', 'twinspot-lite' ) : __( 'No activity in this period yet. Events appear when shoppers use coupons, rings form, or you import orders.', 'twinspot-lite' ) }</td></tr>
 							) }

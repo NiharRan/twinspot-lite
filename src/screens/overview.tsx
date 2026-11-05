@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
+import { Spinner } from '../components/ui/spinner';
 import { Badge } from '../components/ui/badge';
 import { Input, Select } from '../components/ui/input';
 import type { Filters, LinkType, Overview as OverviewData } from '../types';
@@ -287,7 +288,7 @@ export function Overview( { data, error, filters, setFilters, setPage, onOpen, i
 				</div>
 			) }
 
-			{ ! data && ! error && <Card className="p-10 text-center text-muted">{ __( 'Loading…', 'twinspot-lite' ) }</Card> }
+			{ ! data && ! error && <Card><Spinner /></Card> }
 
 			{ data && ! empty && (
 				<div className="grid gap-5 md:grid-cols-3">

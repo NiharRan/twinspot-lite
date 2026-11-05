@@ -1,7 +1,8 @@
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useRef, useState } from '@wordpress/element';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { ArrowLeft, AtSign, Ban, BadgeCheck, Download, ExternalLink, Home, Info, Lock, Phone, Shield, X } from 'lucide-react';
 import { blockRing, getRing } from '../lib/api';
+import { Spinner } from '../components/ui/spinner';
 import type { LinkType, RingDetail as Ring } from '../types';
 import { ConnectionMap } from './connection-map';
 
@@ -30,14 +31,16 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 	const [ error, setError ] = useState( '' );
 	const [ hideBanner, setHideBanner ] = useState( false );
 	const [ busy, setBusy ] = useState( false );
+	const locked = useRef( false ); // State updates lag a double click; a ref blocks the second call at once.
 	useEffect( () => {
 		getRing( orderId ).then( setRing ).catch( ( e: Error ) => setError( e.message ) );
 	}, [ orderId ] );
 
 	const toggleBlock = async () => {
-		if ( ! ring ) {
+		if ( ! ring || locked.current ) {
 			return;
 		}
+		locked.current = true;
 		setBusy( true );
 		try {
 			const r = await blockRing( orderId, ! ring.blocked );
@@ -45,6 +48,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 		} catch ( e ) {
 			setError( ( e as Error ).message );
 		}
+		locked.current = false;
 		setBusy( false );
 	};
 
@@ -57,7 +61,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 		return <div>{ back }<div role="alert" className="mt-3 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div></div>;
 	}
 	if ( ! ring ) {
-		return <div>{ back }<div className={ `${ card } mt-3 p-10 text-center text-muted` }>{ __( 'Loading…', 'twinspot-lite' ) }</div></div>;
+		return <div>{ back }<div className={ `${ card } mt-3` }><Spinner /></div></div>;
 	}
 
 	const date = ( iso: string | null ) => ( iso ? new Date( iso ).toLocaleDateString( undefined, { month: 'short', day: 'numeric', year: 'numeric' } ) : '—' );

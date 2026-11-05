@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from '@wordpress/element';
+import { useCallback, useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { MotionConfig } from 'motion/react';
+import { MotionConfig, motion } from 'motion/react';
 import { getOverview, getSettings, importBatch, saveSettings, setSample, type SettingsData } from './lib/api';
 import { Header } from './components/header';
 import { Accounts } from './screens/accounts';
@@ -21,6 +21,7 @@ export function App() {
 	const [ settings, setSettings ] = useState< SettingsData >( { enabled: true, hold: false } );
 	const enabled = settings.enabled || settings.hold; // Hold mode still guards coupons, just without refusing them.
 	const [ progress, setProgress ] = useState( 0 );
+	const locked = useRef( false ); // Blocks a second click before `importing` re-renders.
 	const [ imported, setImported ] = useState< { n: number; seconds: number } | null >( null );
 
 	const load = useCallback( () => {
@@ -41,6 +42,10 @@ export function App() {
 	}, [ load, filters.search ] );
 
 	const runImport = async () => {
+		if ( locked.current ) {
+			return;
+		}
+		locked.current = true;
 		const start = Date.now();
 		setImporting( true );
 		setProgress( 0 );
@@ -64,10 +69,15 @@ export function App() {
 		} catch ( e ) {
 			setError( ( e as Error ).message || __( 'Import failed.', 'twinspot-lite' ) );
 		}
+		locked.current = false;
 		setImporting( false );
 	};
 
 	const toggleSample = async ( on: boolean ) => {
+		if ( locked.current ) {
+			return;
+		}
+		locked.current = true;
 		setImporting( true );
 		setProgress( 0.1 );
 		setError( '' );
@@ -79,6 +89,7 @@ export function App() {
 		} catch ( e ) {
 			setError( ( e as Error ).message );
 		}
+		locked.current = false;
 		setImporting( false );
 	};
 
@@ -86,6 +97,7 @@ export function App() {
 		<MotionConfig reducedMotion="user">
 			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } />
 			{ error && tab !== 'overview' && <div role="alert" className="mb-5 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div> }
+			<motion.div key={ ringKey ?? tab } initial={ { opacity: 0, y: 8 } } animate={ { opacity: 1, y: 0 } } transition={ { duration: 0.22, ease: 'easeOut' } }>
 			{ ringKey !== null && <RingDetail orderId={ ringKey } onBack={ () => setRingKey( null ) } /> }
 			{ ringKey === null && tab === 'overview' && (
 				<Overview
@@ -107,6 +119,7 @@ export function App() {
 			{ ringKey === null && tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
 			{ ringKey === null && tab === 'activity' && <Activity onOpen={ setRingKey } /> }
 			{ ringKey === null && tab === 'settings' && <Settings saved={ settings } onSave={ save } /> }
+			</motion.div>
 		</MotionConfig>
 	);
 }

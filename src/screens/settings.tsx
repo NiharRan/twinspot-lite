@@ -1,4 +1,4 @@
-import { useEffect, useState } from '@wordpress/element';
+import { useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { Ban, Check, CheckCircle2, CloudCog, CreditCard, Info, Lock, Package, PauseCircle, RotateCcw, Save, ScanSearch, ShieldCheck, Store, Tag, Ticket, User, Wallet, X, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -179,6 +179,7 @@ function Preview( { draft }: { draft: SettingsData } ) {
 export function Settings( { saved, onSave }: { saved: SettingsData; onSave: ( s: SettingsData ) => Promise< unknown > } ) {
 	const [ draft, setDraft ] = useState( saved );
 	const [ busy, setBusy ] = useState( false );
+	const locked = useRef( false );
 	const [ msg, setMsg ] = useState< { ok: boolean; text: string } | null >( null );
 	useEffect( () => setDraft( saved ), [ saved ] );
 	const dirty = draft.enabled !== saved.enabled || draft.hold !== saved.hold;
@@ -188,6 +189,10 @@ export function Settings( { saved, onSave }: { saved: SettingsData; onSave: ( s:
 	const setHold = ( v: boolean ) => setDraft( { hold: v, enabled: v ? false : draft.enabled } );
 
 	const save = async () => {
+		if ( locked.current ) {
+			return;
+		}
+		locked.current = true;
 		setBusy( true );
 		setMsg( null );
 		try {
@@ -196,6 +201,7 @@ export function Settings( { saved, onSave }: { saved: SettingsData; onSave: ( s:
 		} catch ( e ) {
 			setMsg( { ok: false, text: ( e as Error ).message || __( 'Could not save settings.', 'twinspot-lite' ) } );
 		}
+		locked.current = false;
 		setBusy( false );
 	};
 
