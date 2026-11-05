@@ -41,10 +41,10 @@ class CouponGuard implements Module {
 		$c  = new \WC_Coupon( $post->ID );
 		$on = 'yes' === $c->get_meta( self::META );
 		$chips = array( __( 'Normalized addresses', 'twinspot-lite' ), __( 'Alias detection (+tag)', 'twinspot-lite' ), __( 'Phone hashing', 'twinspot-lite' ) );
-		echo '<div class="options_group"><div style="margin:12px;padding:12px 14px;border:1px solid #c3dcd8;border-radius:10px;background:#f0f7f6">';
-		echo '<label style="font-weight:600"><input type="checkbox" name="' . esc_attr( self::META ) . '" value="yes" ' . checked( $on, true, false ) . ' /> ' . esc_html__( 'New customers only (Twinspot)', 'twinspot-lite' ) . '</label> ';
+		echo '<div class="options_group"><div style="overflow:hidden;margin:12px;padding:12px 14px;border:1px solid #c3dcd8;border-radius:10px;background:#f0f7f6">';
+		echo '<label style="float:none;width:auto;margin:0;padding:0;font-weight:600"><input type="checkbox" style="float:none;margin:0 6px 0 0" name="' . esc_attr( self::META ) . '" value="yes" ' . checked( $on, true, false ) . ' /> ' . esc_html__( 'New customers only (Twinspot)', 'twinspot-lite' ) . '</label> ';
 		echo '<span style="background:#9cf2e8;color:#00504a;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:600">' . esc_html__( 'Twinspot Lite Guard', 'twinspot-lite' ) . '</span>';
-		echo '<p style="margin:6px 0 8px;padding:0">' . esc_html__( 'Block if the shopper’s email, phone or address matches any earlier order, even under another account or Gmail alias.', 'twinspot-lite' ) . '</p>';
+		echo '<p style="float:none;margin:6px 0 8px;padding:0">' . esc_html__( 'Block if the shopper’s email, phone or address matches any earlier order, even under another account or Gmail alias.', 'twinspot-lite' ) . '</p>';
 		foreach ( $chips as $chip ) {
 			echo '<span style="display:inline-block;margin:0 6px 0 0;background:#e7eeff;border-radius:6px;padding:2px 8px;font-size:11px">' . esc_html( $chip ) . '</span>';
 		}
