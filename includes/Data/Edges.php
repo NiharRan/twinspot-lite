@@ -92,16 +92,17 @@ class Edges {
 	public function matches( array $h, int $exclude = 0 ): array {
 		global $wpdb;
 		$where = array();
+		$args  = array( $exclude, self::SAMPLE_BASE );
 		foreach ( array_keys( Rings::LINKS ) as $col ) {
 			if ( ! empty( $h[ $col ] ) ) {
-				$where[] = $wpdb->prepare( "$col = %s", $h[ $col ] ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- column is from a fixed list.
+				$where[] = "$col = %s"; // Column is from a fixed list.
+				$args[]  = $h[ $col ];
 			}
 		}
 		if ( ! $where ) {
 			return array();
 		}
-		$sql = $wpdb->prepare( "SELECT order_id FROM {$this->table()} WHERE order_id <> %d AND order_id < %d AND (" . implode( ' OR ', $where ) . ') LIMIT 20', $exclude, self::SAMPLE_BASE ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- parts prepared above.
-		return array_map( 'intval', $wpdb->get_col( $sql ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT order_id FROM {$this->table()} WHERE order_id <> %d AND order_id < %d AND (" . implode( ' OR ', $where ) . ') LIMIT 20', $args ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built above.
 	}
 
 	/** Which of email, phone, address a shopper shares with the given earlier orders. */

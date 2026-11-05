@@ -5,7 +5,9 @@
  * @package Twinspot_Lite
  */
 
-defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
+if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+	exit;
+}
 
 require __DIR__ . '/includes/autoload.php';
 

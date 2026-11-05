@@ -149,9 +149,10 @@ class OrderTracker implements Module {
 
 	private function ring_link( int $order_id, int $orders ): string {
 		$url = add_query_arg( array( 'page' => 'twinspot-lite', 'ring' => $order_id ), admin_url( 'admin.php' ) );
-		/* translators: 1: number of orders in the ring */
 		$chip = 'background:#e7eeff;border-radius:6px;padding:1px 8px;font-size:11px';
-		return '<br><span style="' . $chip . '">' . esc_html__( 'Linked ring', 'twinspot-lite' ) . '</span> <span style="' . $chip . '">' . esc_html( sprintf( _n( '%d order', '%d orders', $orders, 'twinspot-lite' ), $orders ) ) . '</span> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Inspect tree →', 'twinspot-lite' ) . '</a>';
+		/* translators: %d: number of orders in the ring */
+		$count = _n( '%d order', '%d orders', $orders, 'twinspot-lite' );
+		return '<br><span style="' . $chip . '">' . esc_html__( 'Linked ring', 'twinspot-lite' ) . '</span> <span style="' . $chip . '">' . esc_html( sprintf( $count, $orders ) ) . '</span> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Inspect tree →', 'twinspot-lite' ) . '</a>';
 	}
 
 	/** @param bool $log Log a "ring" event when the order links to earlier ones (off for the bulk import). */

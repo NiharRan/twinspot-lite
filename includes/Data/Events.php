@@ -101,9 +101,9 @@ class Events {
 	 */
 	public function query( array $a ): array {
 		global $wpdb;
-		$where = $this->where( $a );
-		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table()} WHERE $where" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
-		$rows  = $wpdb->get_results( "SELECT * FROM {$this->table()} WHERE $where ORDER BY id DESC LIMIT " . (int) $a['per_page'] . ' OFFSET ' . (int) ( ( $a['page'] - 1 ) * $a['per_page'] ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		[ $where, $args ] = $this->where( $a );
+		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->table()} WHERE $where", $args ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built in where().
+		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table()} WHERE $where ORDER BY id DESC LIMIT %d OFFSET %d", array_merge( $args, array( (int) $a['per_page'], (int) ( ( $a['page'] - 1 ) * $a['per_page'] ) ) ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built in where().
 		return array( 'rows' => $rows, 'total' => $total );
 	}
 
@@ -134,23 +134,28 @@ class Events {
 		$wpdb->query( "UPDATE {$this->table()} SET linked = '' WHERE linked = ','" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
-	private function where( array $a ): string {
-		global $wpdb;
-		$w = array( $wpdb->prepare( 'created >= %s', gmdate( 'Y-m-d H:i:s', $a['since'] ) ) );
+	/** @return array{0:string,1:array} SQL with placeholders, and its values. */
+	private function where( array $a ): array {
+		$w    = array( 'created >= %s' );
+		$args = array( gmdate( 'Y-m-d H:i:s', $a['since'] ) );
 		foreach ( array( 'type', 'severity' ) as $key ) {
 			$types = self::GROUPS[ $a[ $key ] ?? '' ] ?? array();
 			if ( $types ) {
-				$w[] = $wpdb->prepare( 'type IN (' . implode( ',', array_fill( 0, count( $types ), '%s' ) ) . ')', $types ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$w[]  = 'type IN (' . implode( ',', array_fill( 0, count( $types ), '%s' ) ) . ')';
+				$args = array_merge( $args, $types );
 			}
 		}
 		$s = ltrim( trim( (string) ( $a['search'] ?? '' ) ), '#' );
 		if ( '' !== $s ) {
-			$like = $wpdb->prepare( 'coupon LIKE %s', '%' . $wpdb->esc_like( $s ) . '%' );
+			$like   = 'coupon LIKE %s';
+			$args[] = '%' . $GLOBALS['wpdb']->esc_like( $s ) . '%';
 			if ( ctype_digit( $s ) ) {
-				$like .= $wpdb->prepare( ' OR order_id = %d OR linked LIKE %s', (int) $s, '%,' . $s . ',%' );
+				$like  .= ' OR order_id = %d OR linked LIKE %s';
+				$args[] = (int) $s;
+				$args[] = '%,' . $s . ',%';
 			}
 			$w[] = "($like)";
 		}
-		return implode( ' AND ', $w );
+		return array( implode( ' AND ', $w ), $args );
 	}
 }
