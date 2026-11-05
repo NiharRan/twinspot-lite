@@ -51,6 +51,24 @@ Instead of refusing a "new customers only" coupon, the order is placed with the 
 
 Many honest customers share an IP address (offices, mobile networks), so it is stored but not used for matching.
 
+= Can developers change its behavior? =
+
+Yes. Filters:
+
+* `twinspot_lite_refuse_coupon` ( $refuse, $order_ids, $coupon ): return false to let a repeat shopper's coupon through.
+* `twinspot_lite_refusal_message` ( $message, $coupon ): change the checkout error text.
+* `twinspot_lite_hold_order` ( $hold, $order, $order_ids ): return false to skip holding an order.
+* `twinspot_lite_track_order` ( $track, $order ): return false to keep an order out of the index.
+* `twinspot_lite_modules` ( $modules ): add or remove plugin modules.
+
+Actions:
+
+* `twinspot_lite_coupon_blocked` ( $code, $order_ids ): a coupon was refused at checkout.
+* `twinspot_lite_order_held` ( $order, $order_ids ): an order is about to be put on hold.
+* `twinspot_lite_ring_detected` ( $order, $order_ids ): an order was first linked to earlier orders. Also fires during the bulk import.
+
+`$order_ids` are earlier orders that share email, phone or address with the shopper.
+
 == Source code and third-party libraries ==
 
 The admin screen is a React app. The files in `build/` are compiled from the readable source in `src/`, available at https://github.com/NiharRan/twinspot-lite. To rebuild: run `npm ci && npm run build`.
