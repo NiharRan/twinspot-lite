@@ -7,31 +7,68 @@
 
 namespace Twinspot_Lite\Features;
 
+use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Fingerprinter;
+
 defined( 'ABSPATH' ) || exit;
 
 class Importer {
 	/** @var OrderTracker */
 	private $tracker;
 
-	public function __construct( OrderTracker $tracker ) {
-		$this->tracker = $tracker;
+	/** @var Edges */
+	private $edges;
+	/** @var Fingerprinter */
+	private $fingerprinter;
+
+	public function __construct( OrderTracker $tracker, Edges $edges, Fingerprinter $fingerprinter ) {
+		$this->tracker       = $tracker;
+		$this->edges         = $edges;
+		$this->fingerprinter = $fingerprinter;
 	}
 
 	/**
-	 * Index the newest orders from the last 12 months. Returns how many were processed.
+	 * Adds three fake linked orders (never real WooCommerce orders) so a new store can see a ring.
 	 */
-	public function run(): int {
-		// shortcut: newest 1000 orders in one request; upgrade to batches for bigger stores.
-		$orders = wc_get_orders(
+	public function add_sample(): void {
+		$rows = array(
+			array( 'jane.doe@gmail.com', '555 010 1111', '12 Oak Street', 'AB1 2CD' ),
+			array( 'janedoe+deal@gmail.com', '555 010 2222', '12 Oak St', 'AB1 2CD' ),
+			array( 'j.shop@example.com', '555-010-1111', '12 Oak Street', 'AB1 2CD' ),
+		);
+		foreach ( $rows as $i => $r ) {
+			$this->edges->save( Edges::SAMPLE_BASE + $i + 1, $this->fingerprinter->hashes( ...$r ) );
+		}
+	}
+
+	public function clear_sample(): void {
+		$this->edges->delete_samples();
+	}
+
+	/**
+	 * Index one batch (100 orders) of the last 12 months, newest first. The screen calls this page by page to show progress.
+	 *
+	 * @return array{processed:int,total:int,pages:int}
+	 */
+	public function run( int $page = 1 ): array {
+		$res = wc_get_orders(
 			array(
-				'limit'        => 1000,
+				'limit'        => 100,
+				'paged'        => $page,
+				'paginate'     => true,
+				'orderby'      => 'date',
+				'order'        => 'DESC',
 				'date_created' => '>' . strtotime( '-12 months' ),
 				'status'       => array( 'wc-processing', 'wc-completed', 'wc-on-hold', 'wc-refunded' ),
 			)
 		);
-		foreach ( $orders as $order ) {
+		foreach ( $res->orders as $order ) {
 			$this->tracker->record( $order );
 		}
-		return count( $orders );
+		return array(
+			'processed' => count( $res->orders ),
+			'total'     => (int) $res->total,
+			'pages'     => (int) $res->max_num_pages,
+		);
 	}
 }

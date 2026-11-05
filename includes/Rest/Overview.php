@@ -11,6 +11,7 @@ use Twinspot_Lite\Core\Rings;
 use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
 use Twinspot_Lite\Data\Fingerprinter;
+use Twinspot_Lite\Features\CouponGuard;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -44,6 +45,10 @@ class Overview {
 			'rings'           => count( $all_rings ),
 			'orders_in_rings' => array_sum( array_map( 'count', $all_rings ) ),
 			'blocked_30d'     => $this->log->total(),
+			'customers'       => $this->edges->customers(),
+			'coupons'         => $this->coupon_count(),
+			'sample'          => (bool) array_filter( array_keys( $by_id ), fn( $id ) => $id >= Edges::SAMPLE_BASE ),
+			'version'         => TWINSPOT_LITE_VERSION,
 		);
 
 		// Search: order number, or an email (matched through its hash).
@@ -90,6 +95,22 @@ class Overview {
 		);
 	}
 
+	/** Coupons with the "New customers only" box ticked. */
+	private function coupon_count(): int {
+		return count(
+			get_posts(
+				array(
+					'post_type'   => 'shop_coupon',
+					'post_status' => 'publish',
+					'fields'      => 'ids',
+					'numberposts' => -1,
+					'meta_key'    => CouponGuard::META, // phpcs:ignore WordPress.DB.SlowDBQuery
+					'meta_value'  => 'yes', // phpcs:ignore WordPress.DB.SlowDBQuery
+				)
+			)
+		);
+	}
+
 	/**
 	 * Adds order links, spend and last order date to one ring.
 	 */
@@ -98,6 +119,15 @@ class Overview {
 		$spent  = 0.0;
 		$last   = null;
 		foreach ( $ring['ids'] as $id ) {
+			if ( $id >= Edges::SAMPLE_BASE ) {
+				$orders[] = array(
+					'id'  => $id - Edges::SAMPLE_BASE,
+					'url' => '',
+				);
+				$spent   += 49;
+				$last     = $last ?: time();
+				continue;
+			}
 			$order = wc_get_order( $id );
 			if ( ! $order ) {
 				continue;
@@ -114,6 +144,7 @@ class Overview {
 		}
 		return array(
 			'size'       => count( $ring['ids'] ),
+			'sample'     => $ring['ids'][0] >= Edges::SAMPLE_BASE,
 			'links'      => $ring['links'],
 			'orders'     => $orders,
 			'total'      => html_entity_decode( wp_strip_all_tags( wc_price( $spent ) ), ENT_QUOTES, 'UTF-8' ),

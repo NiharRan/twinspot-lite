@@ -77,7 +77,25 @@ class Routes implements Module {
 			array(
 				'methods'             => 'POST',
 				'permission_callback' => $permission,
-				'callback'            => fn() => array( 'imported' => $this->importer->run() ),
+				'callback'            => fn( \WP_REST_Request $req ) => $this->importer->run( max( 1, (int) $req->get_param( 'page' ) ) ),
+				'args'                => array(
+					'page' => array(
+						'type'    => 'integer',
+						'default' => 1,
+					),
+				),
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
+			'/sample',
+			array(
+				'methods'             => array( 'POST', 'DELETE' ),
+				'permission_callback' => $permission,
+				'callback'            => function ( \WP_REST_Request $req ) {
+					'POST' === $req->get_method() ? $this->importer->add_sample() : $this->importer->clear_sample();
+					return array( 'ok' => true );
+				},
 			)
 		);
 	}

@@ -12,6 +12,9 @@ use Twinspot_Lite\Core\Rings;
 defined( 'ABSPATH' ) || exit;
 
 class Edges {
+	/** Sample orders use ids from here up; real order ids never get this high. */
+	const SAMPLE_BASE = 4000000000;
+
 	public function table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'twinspot_lite_edges';
@@ -47,6 +50,17 @@ class Edges {
 	public function delete( int $order_id ): void {
 		global $wpdb;
 		$wpdb->delete( $this->table(), array( 'order_id' => $order_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	}
+
+	public function delete_samples(): void {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$this->table()} WHERE order_id >= %d", self::SAMPLE_BASE ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
+	/** Distinct shoppers by email hash, sample rows excluded. */
+	public function customers(): int {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT email_h) FROM {$this->table()} WHERE email_h <> '' AND order_id < %d", self::SAMPLE_BASE ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	public function all(): array {

@@ -45,7 +45,8 @@ Defined in `tailwind.config.js` (names in brackets are the Tailwind class names)
 Namespace `twinspot-lite/v1`, all routes require `manage_woocommerce`.
 
 - `GET /overview?page&per_page&min_size&link&search` returns `stats`, `rings`, `total`, `total_pages`. `search` takes an order number or an email (matched through its hash). `link` is `email`, `phone` or `address`.
-- `POST /import` indexes the newest 1000 orders from the last 12 months and returns `{ imported }`.
+- `POST /sample` adds 3 fake linked orders (ids from 4,000,000,000, never real WooCommerce orders); `DELETE /sample` removes them.
+- `POST /import` indexes the newest 1000 orders from the last 12 months and returns `{ imported, seconds }`.
 
 Limits: rings are computed in PHP over every indexed order on each request. Fine to about 50k orders; move to stored ring ids before that.
 

@@ -3,7 +3,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import { motion } from 'motion/react';
 import {
 	AlertTriangle, ArrowRight, AtSign, CheckCircle2, ChevronLeft, ChevronRight, Home, Link2, Lock, MapPin,
-	Network, Phone, ReceiptText, RefreshCw, RotateCcw, Search, ShieldCheck, TicketCheck, X,
+	Network, Phone, ReceiptText, RefreshCw, RotateCcw, Search, ShieldCheck, TicketCheck, Users, User, ShoppingCart, Check, FlaskConical, X,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -105,7 +105,7 @@ function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 							transition={ { delay: i * 0.03 } }
 							className="border-t border-line hover:bg-primary-soft"
 						>
-							<td className="px-5 py-4"><SizeBadge size={ ring.size } /></td>
+							<td className="px-5 py-4"><div className="flex items-center gap-2"><SizeBadge size={ ring.size } />{ ring.sample && <Badge tone="info">{ __( 'Sample', 'twinspot-lite' ) }</Badge> }</div></td>
 							<td className="px-5 py-4">
 								<div className="flex flex-wrap gap-1.5">
 									{ ring.links.map( ( l ) => {
@@ -118,7 +118,7 @@ function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 								{ ring.orders.map( ( o, n ) => (
 									<span key={ o.id }>
 										{ n > 0 && ', ' }
-										<a className="text-primary hover:underline" href={ o.url }>#{ o.id }</a>
+										{ o.url ? <a className="text-primary hover:underline" href={ o.url }>#{ o.id }</a> : <span>#{ o.id }</span> }
 									</span>
 								) ) }
 							</td>
@@ -145,26 +145,58 @@ function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
 	);
 }
 
-function EmptyState( { onImport, importing }: { onImport: () => void; importing: boolean } ) {
+function ProgressBar( { value }: { value: number } ) {
+	const pct = Math.round( value * 100 );
+	return (
+		<div className="mx-auto w-full max-w-md" role="progressbar" aria-valuemin={ 0 } aria-valuemax={ 100 } aria-valuenow={ pct } aria-label={ __( 'Import progress', 'twinspot-lite' ) }>
+			<div className="h-2 overflow-hidden rounded-full bg-primary-tint">
+				<motion.div className="h-full rounded-full bg-primary" initial={ false } animate={ { width: `${ pct }%` } } transition={ { type: 'tween', ease: 'easeOut', duration: 0.5 } } />
+			</div>
+			<div className="tabular mt-2 text-[13px] text-muted">{ sprintf( __( 'Indexing orders… %d%%', 'twinspot-lite' ), pct ) }</div>
+		</div>
+	);
+}
+
+function EmptyState( { onImport, onSample, importing, progress }: { onImport: () => void; onSample: ( on: boolean ) => void; importing: boolean; progress: number } ) {
 	const perks = [
-		{ icon: AtSign, title: __( 'Checks email aliases', 'twinspot-lite' ), text: __( 'Catches Gmail dots and +tags, so john.doe+deal@gmail.com counts as john’s address.', 'twinspot-lite' ) },
+		{ icon: AtSign, title: __( 'Checks email aliases & typos', 'twinspot-lite' ), text: __( 'Catches Gmail dots and +tags, so john.doe+deal@gmail.com counts as john’s address.', 'twinspot-lite' ) },
 		{ icon: MapPin, title: __( 'Matches delivery addresses', 'twinspot-lite' ), text: __( 'Links orders that ship to the same street address and postcode.', 'twinspot-lite' ) },
 		{ icon: Lock, title: __( '100% private to your store', 'twinspot-lite' ), text: __( 'Everything stays in your own database as one-way hashes.', 'twinspot-lite' ) },
 	];
 	return (
 		<Card className="p-10 text-center">
-			<motion.div { ...fade } className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-tint text-primary">
-				<ShieldCheck size={ 40 } />
+			<motion.div { ...fade } aria-hidden="true" className="relative mx-auto mb-6 flex h-40 w-full max-w-md items-center justify-center">
+				<div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,#CCFBF1_0%,rgba(240,253,250,0.6)_45%,transparent_70%)]" />
+				{ [ 'left-[18%] top-[12%]', 'left-1/2 top-[4%]', 'right-[18%] top-[12%]', 'left-[18%] bottom-[8%]', 'right-[18%] bottom-[8%]' ].map( ( pos ) => (
+					<span key={ pos } className={ `absolute h-1 w-1 rounded-full bg-primary/30 ${ pos }` } />
+				) ) }
+				<div className="relative flex items-center">
+					<span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-white text-primary shadow-sm">
+						<User size={ 28 } />
+						<span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-white">%</span>
+					</span>
+					<span className="-mx-2 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-primary/40 bg-white text-primary"><ShieldCheck size={ 18 } /></span>
+					<span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-white text-primary shadow-sm">
+						<ShoppingCart size={ 28 } />
+						<span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white"><Check size={ 12 } strokeWidth={ 3 } /></span>
+					</span>
+				</div>
 			</motion.div>
 			<h2 className="text-[20px] font-semibold leading-7">{ __( 'No rings found yet', 'twinspot-lite' ) }</h2>
 			<p className="mx-auto mt-2 max-w-xl text-[15px] leading-[22px] text-muted">
-				{ __( 'Twinspot checks new orders automatically. When shoppers reuse the same email, phone or address, linked orders appear here. Import your past orders to see rings from day one.', 'twinspot-lite' ) }
+				{ __( 'Twinspot analyzes your incoming orders automatically. When shoppers try to reuse welcome discount codes with slight variations of their email, phone or delivery address, they will appear here.', 'twinspot-lite' ) }
 			</p>
-			<div className="mt-6 flex justify-center">
-				<Button onClick={ onImport } disabled={ importing }>
-					<RefreshCw size={ 16 } className={ importing ? 'animate-spin' : '' } />
-					{ importing ? __( 'Importing…', 'twinspot-lite' ) : __( 'Import last 12 months of orders', 'twinspot-lite' ) }
-				</Button>
+			<div className="mt-6">
+				{ importing ? <ProgressBar value={ progress } /> : (
+					<div className="flex flex-wrap justify-center gap-3">
+						<Button onClick={ onImport }>
+							<RefreshCw size={ 16 } />{ __( 'Import last 12 months of orders', 'twinspot-lite' ) }
+						</Button>
+						<Button variant="secondary" className="bg-info" onClick={ () => onSample( true ) }>
+							<FlaskConical size={ 16 } />{ __( 'Test with sample order data', 'twinspot-lite' ) }
+						</Button>
+					</div>
+				) }
 			</div>
 			<div className="mt-8 grid gap-6 rounded-xl bg-info p-6 text-left md:grid-cols-3">
 				{ perks.map( ( p ) => (
@@ -185,12 +217,14 @@ interface Props extends Omit< TableProps, 'data' > {
 	data: OverviewData | null;
 	error: string;
 	importing: boolean;
-	imported: number | null;
+	progress: number;
+	imported: { n: number; seconds: number } | null;
 	dismissImported: () => void;
 	onImport: () => void;
+	onSample: ( on: boolean ) => void;
 }
 
-export function Overview( { data, error, filters, setFilters, setPage, importing, imported, dismissImported, onImport }: Props ) {
+export function Overview( { data, error, filters, setFilters, setPage, importing, progress, imported, dismissImported, onImport, onSample }: Props ) {
 	const [ hideInfo, setHideInfo ] = useState( () => window.localStorage.getItem( 'twinspotLiteHideInfo' ) === '1' );
 	const stats = data?.stats;
 	const filtering = filters.search || filters.link || filters.min_size > 2;
@@ -200,7 +234,7 @@ export function Overview( { data, error, filters, setFilters, setPage, importing
 		<div className="flex flex-col gap-5">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
-					<h1 className="text-[24px] font-semibold leading-8">Twinspot</h1>
+					<h1 className="flex items-center gap-3 text-[24px] font-semibold leading-8">Twinspot{ stats && <Badge tone="quiet" className="text-[12px]">{ `v${ stats.version }` }</Badge> }</h1>
 					<p className="mt-1 text-[15px] text-muted">{ __( 'Groups of orders linked by the same email, phone or address', 'twinspot-lite' ) }</p>
 				</div>
 				<div className="flex items-center gap-3">
@@ -218,6 +252,7 @@ export function Overview( { data, error, filters, setFilters, setPage, importing
 				</div>
 			</div>
 
+			{ importing && ! empty && <Card className="p-5"><ProgressBar value={ progress } /></Card> }
 			{ error && (
 				<div role="alert" className="flex items-center gap-3 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">
 					<AlertTriangle size={ 18 } />{ error }
@@ -226,7 +261,10 @@ export function Overview( { data, error, filters, setFilters, setPage, importing
 			{ imported !== null && (
 				<motion.div { ...fade } role="status" className="flex items-center gap-3 rounded-xl border border-success-line bg-success-soft p-4">
 					<CheckCircle2 size={ 20 } className="text-success" />
-					<div className="flex-1"><strong>{ sprintf( _n( 'Indexed %d past order.', 'Indexed %d past orders.', imported, 'twinspot-lite' ), imported ) }</strong></div>
+					<div className="flex-1">
+							<strong>{ sprintf( _n( 'Success: indexed %1$d past order in %2$s seconds.', 'Success: indexed %1$d past orders in %2$s seconds.', imported.n, 'twinspot-lite' ), imported.n, String( imported.seconds ) ) }</strong>
+							<p className="text-muted">{ data && data.stats.rings > 0 ? __( 'Linked orders are listed below.', 'twinspot-lite' ) : __( 'No linked orders found in recent orders. New orders are checked automatically.', 'twinspot-lite' ) }</p>
+						</div>
 					<button onClick={ dismissImported } aria-label={ __( 'Dismiss', 'twinspot-lite' ) }><X size={ 16 } /></button>
 				</motion.div>
 			) }
@@ -247,7 +285,14 @@ export function Overview( { data, error, filters, setFilters, setPage, importing
 					<Stat index={ 2 } label={ __( 'Coupons blocked (30 days)', 'twinspot-lite' ) } value={ data.stats.blocked_30d } icon={ TicketCheck } tone="bg-primary-tint text-primary" />
 				</div>
 			) }
-			{ data && ( empty ? <EmptyState onImport={ onImport } importing={ importing } /> : <RingsTable data={ data } filters={ filters } setFilters={ setFilters } setPage={ setPage } /> ) }
+			{ data && ( empty ? <EmptyState onImport={ onImport } onSample={ onSample } importing={ importing } progress={ progress } /> : <RingsTable data={ data } filters={ filters } setFilters={ setFilters } setPage={ setPage } /> ) }
+			{ data && empty && (
+				<div className="grid gap-5 md:grid-cols-3">
+					<Stat index={ 0 } label={ __( 'Indexed customers', 'twinspot-lite' ) } value={ data.stats.customers } icon={ Users } tone="bg-info text-primary" />
+					<Stat index={ 1 } label={ __( 'Coupons monitored', 'twinspot-lite' ) } value={ data.stats.coupons } icon={ TicketCheck } tone="bg-info text-primary" />
+					<Stat index={ 2 } label={ __( 'Coupons blocked (30 days)', 'twinspot-lite' ) } value={ data.stats.blocked_30d } icon={ ShieldCheck } tone="bg-primary-tint text-primary" />
+				</div>
+			) }
 		</div>
 	);
 }
