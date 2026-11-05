@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from '@wordpress/element';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { MotionConfig, motion } from 'motion/react';
 import { getOverview, getSettings, importBatch, saveSettings, setSample, type SettingsData } from './lib/api';
+import { Spinner } from './components/ui/spinner';
 import { Header } from './components/header';
 import { Accounts } from './screens/accounts';
 import { Activity } from './screens/activity';
 import { Overview } from './screens/overview';
-import { RingDetail } from './screens/ring-detail';
 import { Rules } from './screens/rules';
 import { Settings } from './screens/settings';
 import type { Filters, Overview as OverviewData, Tab } from './types';
 
+const RingDetail = lazy( () => import( './screens/ring-detail' ).then( ( m ) => ( { default: m.RingDetail } ) ) ); // Keeps the graph library out of the main bundle.
 const KEY = 'twinspot_lite_view';
 const TABS: Tab[] = [ 'overview', 'accounts', 'rules', 'activity', 'settings' ];
 
@@ -116,7 +117,7 @@ export function App() {
 			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } />
 			{ error && tab !== 'overview' && <div role="alert" className="mb-5 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div> }
 			<motion.div key={ ringKey ?? tab } initial={ { opacity: 0, y: 8 } } animate={ { opacity: 1, y: 0 } } transition={ { duration: 0.22, ease: 'easeOut' } }>
-			{ ringKey !== null && <RingDetail orderId={ ringKey } onBack={ () => setRingKey( null ) } /> }
+			{ ringKey !== null && <Suspense fallback={ <Spinner /> }><RingDetail orderId={ ringKey } onBack={ () => setRingKey( null ) } /></Suspense> }
 			{ ringKey === null && tab === 'overview' && (
 				<Overview
 					data={ data }

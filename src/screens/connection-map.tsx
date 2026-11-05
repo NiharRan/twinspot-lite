@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useNodesState, useReactFlow, type Edge, type Node, type NodeProps } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, type SimulationNodeDatum } from 'd3-force';
 import { AtSign, Home, Maximize, Minimize, Network, Phone, RefreshCw, ShoppingCart } from 'lucide-react';
 import type { LinkType, RingDetail } from '../types';
