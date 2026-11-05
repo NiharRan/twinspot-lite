@@ -100,7 +100,7 @@ class OrderTracker implements Module {
 				'order_id' => $order->get_id(),
 				'amount'   => $saved[ $code ] ?? 0,
 			);
-			if ( $first && $hold && $m && ! $allowed ) {
+			if ( $first && $hold && $m && ! $allowed && apply_filters( 'twinspot_lite_hold_order', true, $order, $m ) ) {
 				$this->events->add( 'held', $base + $match );
 				$held = true;
 				continue;
@@ -111,6 +111,7 @@ class OrderTracker implements Module {
 		}
 		if ( $held ) {
 			$order->update_meta_data( '_twinspot_lite_held', 1 );
+			do_action( 'twinspot_lite_order_held', $order, $m );
 			$order->update_status( 'on-hold', __( 'Twinspot: held for review, a new-customers-only coupon was used by a returning shopper.', 'twinspot-lite' ) );
 		}
 	}
@@ -154,7 +155,7 @@ class OrderTracker implements Module {
 
 	/** @param bool $log Log a "ring" event when the order links to earlier ones (off for the bulk import). */
 	public function record( $order, bool $log = true ): void {
-		if ( ! $order instanceof \WC_Order ) {
+		if ( ! $order instanceof \WC_Order || ! apply_filters( 'twinspot_lite_track_order', true, $order ) ) {
 			return;
 		}
 		$h = $this->fingerprinter->hashes( $order->get_billing_email(), $order->get_billing_phone(), $order->get_billing_address_1(), $order->get_billing_postcode(), $order->get_customer_ip_address() );
@@ -170,6 +171,7 @@ class OrderTracker implements Module {
 			);
 			$order->update_meta_data( '_twinspot_lite_noted', 1 );
 			$order->save();
+			do_action( 'twinspot_lite_ring_detected', $order, $m );
 			if ( $log ) {
 				$this->events->add(
 					'ring',

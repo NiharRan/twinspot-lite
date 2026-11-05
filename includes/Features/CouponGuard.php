@@ -77,7 +77,14 @@ class CouponGuard implements Module {
 			return $valid;
 		}
 		$ids = $this->edges->matches( $h ); // Empty details match nothing, so this fails open.
-		if ( $blocked || $ids ) {
+		/**
+		 * Filters whether a repeat shopper's coupon is refused. Return false to let it through.
+		 *
+		 * @param bool       $refuse Whether to refuse the coupon.
+		 * @param int[]      $ids    Earlier order ids linked to this shopper.
+		 * @param \WC_Coupon $coupon Coupon being validated.
+		 */
+		if ( ( $blocked || $ids ) && apply_filters( 'twinspot_lite_refuse_coupon', true, $ids, $coupon ) ) {
 			$fixed = in_array( $coupon->get_discount_type(), array( 'fixed_cart', 'fixed_product' ), true );
 			if ( WC()->session ) {
 				WC()->session->set( 'twinspot_lite_blocked_coupon', array( 'code' => $coupon->get_code(), 'ids' => array_map( 'intval', $ids ) ) ); // Read by OrderTracker to note the order.
@@ -94,7 +101,8 @@ class CouponGuard implements Module {
 					'meta'    => $blocked ? array( 'why' => 'ring' ) : array(),
 				)
 			);
-			throw new \Exception( esc_html__( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ) );
+			do_action( 'twinspot_lite_coupon_blocked', $coupon->get_code(), $ids );
+			throw new \Exception( esc_html( apply_filters( 'twinspot_lite_refusal_message', __( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ), $coupon ) ) );
 		}
 		return $valid;
 	}
