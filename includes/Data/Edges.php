@@ -15,6 +15,10 @@ class Edges {
 	/** Sample orders use ids from here up; real order ids never get this high. */
 	const SAMPLE_BASE = 4000000000;
 
+	/** Bump when the table columns or keys change; maybe_install() then runs dbDelta once. */
+	const DB_VERSION = '1';
+	const OPTION     = 'twinspot_lite_edges_db';
+
 	public function table(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'twinspot_lite_edges';
@@ -35,11 +39,20 @@ class Edges {
 			KEY email_h (email_h), KEY phone_h (phone_h), KEY addr_h (addr_h)
 		) {$wpdb->get_charset_collate()};"
 		);
+		update_option( self::OPTION, self::DB_VERSION, false );
+	}
+
+	/** Existing sites get schema changes on the first request after an update. */
+	public function maybe_install(): void {
+		if ( get_option( self::OPTION ) !== self::DB_VERSION ) {
+			$this->install();
+		}
 	}
 
 	public function drop(): void {
 		global $wpdb;
 		$wpdb->query( "DROP TABLE IF EXISTS {$this->table()}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		delete_option( self::OPTION );
 	}
 
 	public function save( int $order_id, array $hashes ): void {

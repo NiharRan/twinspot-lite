@@ -55,7 +55,8 @@ class Plugin {
 		$prints  = new Fingerprinter();
 		$log     = new BlockLog();
 		$events  = new Events();
-		$events->maybe_install(); // Sites updated from an older version get the log table here.
+		$edges->maybe_install(); // Sites updated from an older version get new tables and columns here.
+		$events->maybe_install();
 		$tracker = new OrderTracker( $edges, $prints, $log, $events );
 
 		return array(
