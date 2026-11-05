@@ -58,9 +58,10 @@ export interface TableProps {
 	filters: Filters;
 	setFilters: ( f: Partial< Filters > ) => void;
 	setPage: ( p: number ) => void;
+	onOpen: ( key: number ) => void;
 }
 
-export function RingsTable( { data, filters, setFilters, setPage }: TableProps ) {
+export function RingsTable( { data, filters, setFilters, setPage, onOpen }: TableProps ) {
 	const { rings, total, total_pages: pages } = data;
 	const reset = () => setFilters( { search: '', min_size: 2, link: '' } );
 	return (
@@ -132,6 +133,9 @@ export function RingsTable( { data, filters, setFilters, setPage }: TableProps )
 							<td className="tabular px-5 py-4 text-right">{ ring.total }</td>
 							<td className="px-5 py-4 text-muted">
 								{ ring.last_order ? lastOrder( ring.last_order ) : '—' }
+							</td>
+							<td className="px-5 py-4 text-right">
+								<Button variant="ghost" onClick={ () => onOpen( ring.key ) }>{ __( 'View map', 'twinspot-lite' ) }<ArrowRight size={ 14 } /></Button>
 							</td>
 						</motion.tr>
 					) ) }
@@ -231,7 +235,7 @@ interface Props extends Omit< TableProps, 'data' > {
 	onSample: ( on: boolean ) => void;
 }
 
-export function Overview( { data, error, filters, setFilters, setPage, importing, progress, imported, dismissImported, onImport, onSample }: Props ) {
+export function Overview( { data, error, filters, setFilters, setPage, onOpen, importing, progress, imported, dismissImported, onImport, onSample }: Props ) {
 	const [ hideInfo, setHideInfo ] = useState( () => window.localStorage.getItem( 'twinspotLiteHideInfo' ) === '1' );
 	const stats = data?.stats;
 	const filtering = filters.search || filters.link || filters.min_size > 2;
@@ -292,7 +296,7 @@ export function Overview( { data, error, filters, setFilters, setPage, importing
 					<Stat index={ 2 } label={ __( 'Coupons blocked (30 days)', 'twinspot-lite' ) } value={ data.stats.blocked_30d } hint={ __( 'In the last 30 days', 'twinspot-lite' ) } icon={ TicketCheck } tone="bg-primary-tint text-primary" />
 				</div>
 			) }
-			{ data && ( empty ? <EmptyState onImport={ onImport } onSample={ onSample } importing={ importing } progress={ progress } /> : <RingsTable data={ data } filters={ filters } setFilters={ setFilters } setPage={ setPage } /> ) }
+			{ data && ( empty ? <EmptyState onImport={ onImport } onSample={ onSample } importing={ importing } progress={ progress } /> : <RingsTable data={ data } filters={ filters } setFilters={ setFilters } setPage={ setPage } onOpen={ onOpen } /> ) }
 			{ data && empty && (
 				<div className="grid gap-5 md:grid-cols-3">
 					<Stat index={ 0 } label={ __( 'Indexed customers', 'twinspot-lite' ) } value={ data.stats.customers } icon={ Users } tone="bg-info text-primary" />

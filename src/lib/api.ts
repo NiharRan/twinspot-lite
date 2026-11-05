@@ -1,5 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
-import type { Overview } from '../types';
+import type { Overview, RingDetail } from '../types';
 
 const base = '/twinspot-lite/v1';
 
@@ -23,3 +23,7 @@ export const getSettings = () => apiFetch< { enabled: boolean } >( { path: `${ b
 export const saveSettings = ( enabled: boolean ) => apiFetch< { enabled: boolean } >( { path: `${ base }/settings`, method: 'POST', data: { enabled } } );
 
 export const setSample = ( on: boolean ) => apiFetch( { path: `${ base }/sample`, method: on ? 'POST' : 'DELETE' } );
+
+export const getRing = ( orderId: number ) => apiFetch< RingDetail >( { path: `${ base }/ring/${ orderId }` } );
+
+export const blockRing = ( orderId: number, on: boolean ) => apiFetch< { blocked: boolean } >( { path: `${ base }/ring/${ orderId }/block`, method: on ? 'POST' : 'DELETE' } );

@@ -145,12 +145,138 @@ class Overview {
 			}
 		}
 		return array(
+			'key'        => $ring['ids'][0],
 			'size'       => count( $ring['ids'] ),
 			'sample'     => $ring['ids'][0] >= Edges::SAMPLE_BASE,
 			'links'      => $ring['links'],
 			'orders'     => $orders,
-			'total'      => html_entity_decode( wp_strip_all_tags( wc_price( $spent ) ), ENT_QUOTES, 'UTF-8' ),
+			'total'      => $this->money( $spent ),
 			'last_order' => $last ? gmdate( 'c', $last ) : null,
 		);
+	}
+
+	private function money( float $amount ): string {
+		return html_entity_decode( wp_strip_all_tags( wc_price( $amount ) ), ENT_QUOTES, 'UTF-8' );
+	}
+
+	/**
+	 * One ring as a graph: order nodes, a hub node per identifier shared by 2+ orders, and an edge per use.
+	 * Hubs carry only a type and a count, never the hash.
+	 *
+	 * @param int $order_id Any order in the ring.
+	 * @return array|null Null when the order is in no ring.
+	 */
+	public function detail( int $order_id ): ?array {
+		$rows = $this->edges->all();
+		$ring = null;
+		foreach ( Rings::find( $rows ) as $ids ) {
+			if ( in_array( $order_id, $ids, true ) ) {
+				$ring = $ids;
+				break;
+			}
+		}
+		if ( ! $ring ) {
+			return null;
+		}
+		$rows = array_values( array_filter( $rows, fn( $r ) => in_array( (int) $r['order_id'], $ring, true ) ) );
+		rsort( $ring );
+
+		$hubs  = array();
+		$edges = array();
+		foreach ( Rings::LINKS as $col => $type ) {
+			$groups = array();
+			foreach ( $rows as $r ) {
+				if ( ! empty( $r[ $col ] ) ) {
+					$groups[ $r[ $col ] ][] = (int) $r['order_id'];
+				}
+			}
+			foreach ( array_values( array_filter( $groups, fn( $g ) => count( $g ) > 1 ) ) as $n => $g ) {
+				$hubs[] = array(
+					'id'    => $type . $n,
+					'type'  => $type,
+					'count' => count( $g ),
+				);
+				foreach ( $g as $oid ) {
+					$edges[] = array( $oid, $type . $n );
+				}
+			}
+		}
+		$top = $hubs ? max( array_column( $hubs, 'count' ) ) : 0;
+		foreach ( $hubs as &$h ) {
+			$h['top'] = $h['count'] === $top;
+		}
+		unset( $h );
+
+		$orders = array();
+		$spent  = 0.0;
+		$first  = null;
+		foreach ( $ring as $id ) {
+			if ( $id >= Edges::SAMPLE_BASE ) {
+				$orders[] = array(
+					'id'      => $id - Edges::SAMPLE_BASE,
+					'edge_id' => $id,
+					'url'     => '',
+					'total'   => $this->money( 49 ),
+					'date'    => gmdate( 'c' ),
+					'status'  => '',
+					'coupons' => array(),
+				);
+				$spent   += 49;
+				continue;
+			}
+			$order = wc_get_order( $id );
+			if ( ! $order ) {
+				continue;
+			}
+			$created = $order->get_date_created();
+			$spent  += (float) $order->get_total();
+			if ( $created && ( ! $first || $created->getTimestamp() < $first ) ) {
+				$first = $created->getTimestamp();
+			}
+			$orders[] = array(
+				'id'      => $id,
+				'edge_id' => $id,
+				'url'     => $order->get_edit_order_url(),
+				'total'   => $this->money( (float) $order->get_total() ),
+				'date'    => $created ? gmdate( 'c', $created->getTimestamp() ) : null,
+				'status'  => wc_get_order_status_name( $order->get_status() ),
+				'coupons' => $order->get_coupon_codes(),
+			);
+		}
+
+		$blocks = $this->log->for_orders( $ring );
+		return array(
+			'key'        => $ring[0],
+			'cluster'    => 'R-' . ( $ring[0] % Edges::SAMPLE_BASE ),
+			'blocked'    => isset( $this->log->blocked_rings()[ $ring[0] ] ),
+			'attempts'   => $blocks['count'],
+			'prevented'  => $blocks['amount'] > 0 ? $this->money( $blocks['amount'] ) : '',
+			'ids'        => $ring,
+			'size'       => count( $ring ),
+			'sample'     => $ring[0] >= Edges::SAMPLE_BASE,
+			'links'      => Rings::links( $rows ),
+			'personas'   => count( array_unique( array_filter( array_column( $rows, 'email_h' ) ) ) ),
+			'total'      => $this->money( $spent ),
+			'first'      => $first ? gmdate( 'c', $first ) : null,
+			'orders'     => $orders,
+			'hubs'       => $hubs,
+			'edges'      => $edges,
+		);
+	}
+
+	/** Block or unblock a whole ring from coupons. Returns the new state. */
+	public function set_blocked( int $order_id, bool $on ): ?bool {
+		$ring = $this->detail( $order_id );
+		if ( ! $ring ) {
+			return null;
+		}
+		$hashes = array();
+		foreach ( $this->edges->all() as $r ) {
+			if ( in_array( (int) $r['order_id'], $ring['ids'], true ) ) {
+				$hashes = array_merge( $hashes, array( $r['email_h'], $r['phone_h'], $r['addr_h'] ) );
+			}
+		}
+		$this->log->set_ring_blocked( $ring['key'], $hashes, $on );
+		return $on;
 	}
 }

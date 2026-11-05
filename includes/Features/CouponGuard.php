@@ -52,13 +52,19 @@ class CouponGuard implements Module {
 	}
 
 	public function validate( $valid, $coupon ) {
-		if ( ! $valid || 'no' === get_option( 'twinspot_lite_enabled' ) || 'yes' !== $coupon->get_meta( self::META ) || ! WC()->customer ) {
+		if ( ! $valid || 'no' === get_option( 'twinspot_lite_enabled' ) || ! WC()->customer ) {
 			return $valid;
 		}
-		$c = WC()->customer;
-		$h = $this->fingerprinter->hashes( $c->get_billing_email(), $c->get_billing_phone(), $c->get_billing_address_1(), $c->get_billing_postcode() );
-		if ( $this->edges->matches( $h ) ) { // Empty details match nothing, so this fails open.
-			$this->log->add();
+		$c       = WC()->customer;
+		$h       = $this->fingerprinter->hashes( $c->get_billing_email(), $c->get_billing_phone(), $c->get_billing_address_1(), $c->get_billing_postcode() );
+		$blocked = $this->log->is_blocked( $h ); // Admin blocked this ring from every coupon.
+		if ( ! $blocked && 'yes' !== $coupon->get_meta( self::META ) ) {
+			return $valid;
+		}
+		$ids = $this->edges->matches( $h ); // Empty details match nothing, so this fails open.
+		if ( $blocked || $ids ) {
+			$fixed = in_array( $coupon->get_discount_type(), array( 'fixed_cart', 'fixed_product' ), true );
+			$this->log->add( $ids, $fixed ? (float) $coupon->get_amount() : 0.0 );
 			throw new \Exception( esc_html__( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ) );
 		}
 		return $valid;

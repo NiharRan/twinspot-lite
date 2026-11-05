@@ -78,6 +78,31 @@ class Routes implements Module {
 		);
 		register_rest_route(
 			self::NAMESPACE,
+			'/ring/(?P<order_id>\\d+)',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => $permission,
+				'callback'            => function ( \WP_REST_Request $req ) {
+					$ring = $this->overview->detail( (int) $req['order_id'] );
+					unset( $ring['ids'] );
+					return $ring ?? new \WP_Error( 'twinspot_lite_no_ring', __( 'This order is not in a ring.', 'twinspot-lite' ), array( 'status' => 404 ) );
+				},
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
+			'/ring/(?P<order_id>\\d+)/block',
+			array(
+				'methods'             => array( 'POST', 'DELETE' ),
+				'permission_callback' => $permission,
+				'callback'            => function ( \WP_REST_Request $req ) {
+					$on = $this->overview->set_blocked( (int) $req['order_id'], 'POST' === $req->get_method() );
+					return null === $on ? new \WP_Error( 'twinspot_lite_no_ring', __( 'This order is not in a ring.', 'twinspot-lite' ), array( 'status' => 404 ) ) : array( 'blocked' => $on );
+				},
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
 			'/import',
 			array(
 				'methods'             => 'POST',

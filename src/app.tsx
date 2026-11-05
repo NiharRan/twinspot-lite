@@ -6,6 +6,7 @@ import { Header } from './components/header';
 import { Accounts } from './screens/accounts';
 import { Activity } from './screens/activity';
 import { Overview } from './screens/overview';
+import { RingDetail } from './screens/ring-detail';
 import { Rules } from './screens/rules';
 import { Settings } from './screens/settings';
 import type { Filters, Overview as OverviewData, Tab } from './types';
@@ -16,6 +17,7 @@ export function App() {
 	const [ error, setError ] = useState( '' );
 	const [ importing, setImporting ] = useState( false );
 	const [ tab, setTab ] = useState< Tab >( 'overview' );
+	const [ ringKey, setRingKey ] = useState< number | null >( null );
 	const [ enabled, setEnabled ] = useState( true );
 	const [ progress, setProgress ] = useState( 0 );
 	const [ imported, setImported ] = useState< { n: number; seconds: number } | null >( null );
@@ -87,15 +89,17 @@ export function App() {
 
 	return (
 		<MotionConfig reducedMotion="user">
-			<Header tab={ tab } setTab={ setTab } enabled={ enabled } />
+			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } />
 			{ error && tab !== 'overview' && <div role="alert" className="mb-5 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div> }
-			{ tab === 'overview' && (
+			{ ringKey !== null && <RingDetail orderId={ ringKey } onBack={ () => setRingKey( null ) } /> }
+			{ ringKey === null && tab === 'overview' && (
 				<Overview
 					data={ data }
 					error={ error }
 					filters={ filters }
 					setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) }
 					setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) }
+					onOpen={ setRingKey }
 					importing={ importing }
 					progress={ progress }
 					imported={ imported }
@@ -104,10 +108,10 @@ export function App() {
 					onSample={ toggleSample }
 				/>
 			) }
-			{ tab === 'accounts' && <Accounts data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
-			{ tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
-			{ tab === 'activity' && <Activity /> }
-			{ tab === 'settings' && <Settings enabled={ enabled } setEnabled={ toggleEnabled } /> }
+			{ ringKey === null && tab === 'accounts' && <Accounts onOpen={ setRingKey } data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
+			{ ringKey === null && tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
+			{ ringKey === null && tab === 'activity' && <Activity /> }
+			{ ringKey === null && tab === 'settings' && <Settings enabled={ enabled } setEnabled={ toggleEnabled } /> }
 		</MotionConfig>
 	);
 }

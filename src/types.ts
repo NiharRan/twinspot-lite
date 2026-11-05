@@ -1,6 +1,7 @@
 export type LinkType = 'email' | 'phone' | 'address';
 
 export interface Ring {
+	key: number;
 	size: number;
 	sample: boolean;
 	links: LinkType[];
@@ -36,3 +37,37 @@ export interface Filters {
 }
 
 export type Tab = 'overview' | 'accounts' | 'rules' | 'activity' | 'settings';
+
+export interface RingOrder {
+	id: number;
+	edge_id: number;
+	url: string;
+	total: string;
+	date: string | null;
+	status: string;
+	coupons: string[];
+}
+
+export interface RingHub {
+	id: string;
+	type: LinkType;
+	count: number;
+	top: boolean;
+}
+
+export interface RingDetail {
+	key: number;
+	cluster: string;
+	blocked: boolean;
+	attempts: number;
+	prevented: string;
+	size: number;
+	sample: boolean;
+	links: LinkType[];
+	personas: number;
+	total: string;
+	first: string | null;
+	orders: RingOrder[];
+	hubs: RingHub[];
+	edges: [ number, string ][];
+}
