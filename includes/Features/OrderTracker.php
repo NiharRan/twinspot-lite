@@ -89,6 +89,7 @@ class OrderTracker implements Module {
 		$hold    = 'yes' === get_option( 'twinspot_lite_hold_orders' ) && 'no' === get_option( 'twinspot_lite_enabled' ); // With blocking on, the coupon was already refused at checkout.
 		$guard   = $hold || 'no' !== get_option( 'twinspot_lite_enabled' );
 		$saved   = array();
+		/** @var \WC_Order_Item_Coupon $item */
 		foreach ( $order->get_items( 'coupon' ) as $item ) {
 			$saved[ $item->get_code() ] = (float) $item->get_discount();
 		}
@@ -110,7 +111,7 @@ class OrderTracker implements Module {
 			$this->events->add( 'clean', $base + ( $first ? $match : array() ) + array( 'meta' => array( 'why' => $why ) ) );
 		}
 		if ( $held ) {
-			$order->update_meta_data( '_twinspot_lite_held', 1 );
+			$order->update_meta_data( '_twinspot_lite_held', '1' );
 			do_action( 'twinspot_lite_order_held', $order, $m );
 			$order->update_status( 'on-hold', __( 'Twinspot: held for review, a new-customers-only coupon was used by a returning shopper.', 'twinspot-lite' ) );
 		}
@@ -169,7 +170,7 @@ class OrderTracker implements Module {
 					$this->links( $m )
 				) . ' ' . $this->ring_link( $order->get_id(), count( $m ) + 1 )
 			);
-			$order->update_meta_data( '_twinspot_lite_noted', 1 );
+			$order->update_meta_data( '_twinspot_lite_noted', '1' );
 			$order->save();
 			do_action( 'twinspot_lite_ring_detected', $order, $m );
 			if ( $log ) {
