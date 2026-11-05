@@ -11,13 +11,25 @@ import { Rules } from './screens/rules';
 import { Settings } from './screens/settings';
 import type { Filters, Overview as OverviewData, Tab } from './types';
 
+const KEY = 'twinspot_lite_view';
+const TABS: Tab[] = [ 'overview', 'accounts', 'rules', 'activity', 'settings' ];
+
+function savedView(): { tab: Tab; ring: number | null } {
+	try {
+		const v = JSON.parse( window.localStorage.getItem( KEY ) || '{}' );
+		return { tab: TABS.includes( v.tab ) ? v.tab : 'overview', ring: Number( v.ring ) || null };
+	} catch {
+		return { tab: 'overview', ring: null };
+	}
+}
+
 export function App() {
 	const [ filters, setFilters ] = useState< Filters >( { search: '', min_size: 2, link: '', page: 1 } );
 	const [ data, setData ] = useState< OverviewData | null >( null );
 	const [ error, setError ] = useState( '' );
 	const [ importing, setImporting ] = useState( false );
-	const [ tab, setTab ] = useState< Tab >( 'overview' );
-	const [ ringKey, setRingKey ] = useState< number | null >( Number( new URLSearchParams( window.location.search ).get( 'ring' ) ) || null ); // ?ring=<order id> deep-links from order notes.
+	const [ tab, setTab ] = useState< Tab >( () => savedView().tab );
+	const [ ringKey, setRingKey ] = useState< number | null >( () => Number( new URLSearchParams( window.location.search ).get( 'ring' ) ) || savedView().ring ); // ?ring=<order id> deep-links from order notes.
 	const [ settings, setSettings ] = useState< SettingsData >( { enabled: true, hold: false } );
 	const enabled = settings.enabled || settings.hold; // Hold mode still guards coupons, just without refusing them.
 	const [ progress, setProgress ] = useState( 0 );
@@ -33,6 +45,12 @@ export function App() {
 	useEffect( () => {
 		getSettings().then( setSettings ).catch( () => {} );
 	}, [] );
+
+	useEffect( () => {
+		try {
+			window.localStorage.setItem( KEY, JSON.stringify( { tab, ring: ringKey } ) );
+		} catch {}
+	}, [ tab, ringKey ] );
 
 	const save = ( next: SettingsData ) => saveSettings( next ).then( setSettings );
 
