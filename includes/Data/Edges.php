@@ -90,4 +90,14 @@ class Edges {
 		$sql = $wpdb->prepare( "SELECT order_id FROM {$this->table()} WHERE order_id <> %d AND order_id < %d AND (" . implode( ' OR ', $where ) . ') LIMIT 20', $exclude, self::SAMPLE_BASE ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- parts prepared above.
 		return array_map( 'intval', $wpdb->get_col( $sql ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
 	}
+
+	/** Which of email, phone, address a shopper shares with the given earlier orders. */
+	public function match_types( array $h, array $ids ): array {
+		global $wpdb;
+		$ids = array_map( 'intval', $ids );
+		if ( ! $ids ) {
+			return array();
+		}
+		return Rings::shared( $h, $wpdb->get_results( "SELECT * FROM {$this->table()} WHERE order_id IN (" . implode( ',', $ids ) . ')', ARRAY_A ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- ids are cast to int.
+	}
 }

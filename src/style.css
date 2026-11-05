@@ -47,3 +47,14 @@
 #twinspot-root .tabular {
 	font-variant-numeric: tabular-nums;
 }
+
+/* Sheet slide-in (Radix sets data-state). */
+@keyframes ts-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes ts-out { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes ts-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ts-fade-out { from { opacity: 1; } to { opacity: 0; } }
+#twinspot-root .ts-sheet[data-state='open'] { animation: ts-in 0.32s cubic-bezier(0.32, 0.72, 0, 1) both; }
+#twinspot-root .ts-sheet[data-state='closed'] { animation: ts-out 0.24s cubic-bezier(0.4, 0, 1, 1) both; }
+#twinspot-root .ts-overlay[data-state='open'] { animation: ts-fade-in 0.32s both; }
+#twinspot-root .ts-overlay[data-state='closed'] { animation: ts-fade-out 0.24s both; }
+@media (prefers-reduced-motion: reduce) { #twinspot-root .ts-sheet, #twinspot-root .ts-overlay { animation: none !important; } }

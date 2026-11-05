@@ -9,6 +9,7 @@ namespace Twinspot_Lite\Features;
 
 use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
 use Twinspot_Lite\Module;
 
@@ -22,8 +23,11 @@ class Privacy implements Module {
 
 	/** @var BlockLog */
 	private $block_log;
+	/** @var Events */
+	private $events;
 
-	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $block_log ) {
+	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $block_log, Events $events ) {
+		$this->events        = $events;
 		$this->edges         = $edges;
 		$this->fingerprinter = $fingerprinter;
 		$this->block_log     = $block_log;
@@ -104,6 +108,7 @@ class Privacy implements Module {
 		}
 		if ( $rows ) {
 			$this->block_log->forget( $hashes, $ids );
+			$this->events->forget( $ids );
 		}
 		return array(
 			'items_removed'  => (bool) $rows,

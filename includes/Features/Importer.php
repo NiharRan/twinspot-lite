@@ -7,7 +7,9 @@
 
 namespace Twinspot_Lite\Features;
 
+use Twinspot_Lite\Core\Rings;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
 
 defined( 'ABSPATH' ) || exit;
@@ -20,11 +22,14 @@ class Importer {
 	private $edges;
 	/** @var Fingerprinter */
 	private $fingerprinter;
+	/** @var Events */
+	private $events;
 
-	public function __construct( OrderTracker $tracker, Edges $edges, Fingerprinter $fingerprinter ) {
+	public function __construct( OrderTracker $tracker, Edges $edges, Fingerprinter $fingerprinter, Events $events ) {
 		$this->tracker       = $tracker;
 		$this->edges         = $edges;
 		$this->fingerprinter = $fingerprinter;
+		$this->events        = $events;
 	}
 
 	/**
@@ -63,7 +68,18 @@ class Importer {
 			)
 		);
 		foreach ( $res->orders as $order ) {
-			$this->tracker->record( $order );
+			$this->tracker->record( $order, false );
+		}
+		if ( $res->total && $page >= $res->max_num_pages ) { // Last batch: one log entry for the whole import.
+			$this->events->add(
+				'import',
+				array(
+					'meta' => array(
+						'orders' => (int) $res->total,
+						'rings'  => count( Rings::find( $this->edges->all() ) ),
+					),
+				)
+			);
 		}
 		return array(
 			'processed' => count( $res->orders ),

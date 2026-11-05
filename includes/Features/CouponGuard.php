@@ -9,6 +9,7 @@ namespace Twinspot_Lite\Features;
 
 use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
 use Twinspot_Lite\Module;
 
@@ -23,11 +24,14 @@ class CouponGuard implements Module {
 	private $fingerprinter;
 	/** @var BlockLog */
 	private $log;
+	/** @var Events */
+	private $events;
 
-	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $log ) {
+	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $log, Events $events ) {
 		$this->edges         = $edges;
 		$this->fingerprinter = $fingerprinter;
 		$this->log           = $log;
+		$this->events        = $events;
 	}
 
 	public function register(): void {
@@ -64,6 +68,9 @@ class CouponGuard implements Module {
 		}
 		$c       = WC()->customer;
 		$h       = $this->fingerprinter->hashes( $c->get_billing_email(), $c->get_billing_phone(), $c->get_billing_address_1(), $c->get_billing_postcode() );
+		if ( $this->log->is_allowed( $h ) ) {
+			return $valid; // Admin allowed this ring (whitelist rule).
+		}
 		$blocked = $this->log->is_blocked( $h ); // Admin blocked this ring from every coupon.
 		// Hold mode never refuses on the "new customers only" rule (OrderTracker holds the order), but admin-blocked rings stay refused.
 		if ( ! $blocked && ( ! $block || 'yes' !== $coupon->get_meta( self::META ) ) ) {
@@ -75,7 +82,18 @@ class CouponGuard implements Module {
 			if ( WC()->session ) {
 				WC()->session->set( 'twinspot_lite_blocked_coupon', array( 'code' => $coupon->get_code(), 'ids' => array_map( 'intval', $ids ) ) ); // Read by OrderTracker to note the order.
 			}
-			$this->log->add( $ids, $fixed ? (float) $coupon->get_amount() : 0.0 );
+			$amount = $fixed ? (float) $coupon->get_amount() : 0.0;
+			$this->log->add( $ids, $amount );
+			$this->events->add(
+				'blocked',
+				array(
+					'coupon'  => $coupon->get_code(),
+					'linked'  => $ids,
+					'matched' => $this->edges->match_types( $h, $ids ),
+					'amount'  => $amount,
+					'meta'    => $blocked ? array( 'why' => 'ring' ) : array(),
+				)
+			);
 			throw new \Exception( esc_html__( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ) );
 		}
 		return $valid;

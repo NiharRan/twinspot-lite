@@ -41,7 +41,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 		setBusy( true );
 		try {
 			const r = await blockRing( orderId, ! ring.blocked );
-			setRing( { ...ring, blocked: r.blocked } );
+			setRing( { ...ring, blocked: r.blocked, allowed: r.blocked ? false : ring.allowed } );
 		} catch ( e ) {
 			setError( ( e as Error ).message );
 		}
@@ -94,6 +94,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 				</div>
 			</div>
 
+			{ ring.allowed && <div role="status" className="mb-5 rounded-xl bg-primary-soft p-3 text-primary">{ __( 'This ring is on your allow list: its shoppers are never blocked or held. Remove the rule from the Activity Log.', 'twinspot-lite' ) }</div> }
 			{ ring.blocked && <div role="status" className="mb-5 rounded-xl bg-danger-soft p-3 text-danger">{ __( 'This ring is blocked: shoppers matching any of its details cannot use any coupon.', 'twinspot-lite' ) }</div> }
 			{ ring.attempts > 0 && ! hideBanner && (
 				<div className="mb-5 flex items-start gap-3 rounded-xl bg-info p-3 shadow-sm">

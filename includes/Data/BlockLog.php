@@ -1,6 +1,6 @@
 <?php
 /**
- * Blocked coupon attempts (daily count for 30 days, last 200 events) and manually blocked rings.
+ * Blocked coupon attempts (daily count for 30 days, last 200 events), manually blocked rings and allowed (whitelisted) rings.
  *
  * @package Twinspot_Lite
  */
@@ -13,6 +13,7 @@ class BlockLog {
 	const OPTION = 'twinspot_lite_blocked';
 	const EVENTS = 'twinspot_lite_block_events';
 	const RINGS  = 'twinspot_lite_blocked_rings';
+	const ALLOWED = 'twinspot_lite_allowed_rings';
 
 	/**
 	 * @param int[] $order_ids Earlier orders the shopper matched.
@@ -27,11 +28,6 @@ class BlockLog {
 		$log[ $day ] = ( $log[ $day ] ?? 0 ) + 1;
 		ksort( $log );
 		update_option( self::OPTION, array_slice( $log, -30, null, true ), false );
-	}
-
-	/** @return array<string,int> Blocked count per day, newest first. */
-	public function days(): array {
-		return array_reverse( array_map( 'intval', (array) get_option( self::OPTION, array() ) ), true );
 	}
 
 	public function total(): int {
@@ -51,32 +47,63 @@ class BlockLog {
 		return array( 'count' => $count, 'amount' => $amount );
 	}
 
-	/** Rings an admin blocked from all coupons: ring key => identifier hashes. */
-	public function blocked_rings(): array {
-		return (array) get_option( self::RINGS, array() );
+	public function set_ring_blocked( int $key, array $hashes, bool $on ): void {
+		$this->set_ring( self::RINGS, self::ALLOWED, $key, $hashes, $on );
 	}
 
-	public function set_ring_blocked( int $key, array $hashes, bool $on ): void {
-		$rings = $this->blocked_rings();
+	public function set_ring_allowed( int $key, array $hashes, bool $on ): void {
+		$this->set_ring( self::ALLOWED, self::RINGS, $key, $hashes, $on );
+	}
+
+	/** Store or clear one ring in a list. Matching by hash (not key) survives ring keys changing as rings grow; a ring is never in both lists. */
+	private function set_ring( string $option, string $other, int $key, array $hashes, bool $on ): void {
+		$hashes = array_values( array_unique( array_filter( $hashes ) ) );
+		$rings  = $this->without( $option, $hashes );
 		if ( $on ) {
-			$rings[ $key ] = array_values( array_unique( array_filter( $hashes ) ) );
-		} else {
-			unset( $rings[ $key ] );
+			$rings[ $key ] = $hashes;
+			$this->without( $other, $hashes );
 		}
-		update_option( self::RINGS, $rings, false );
+		update_option( $option, $rings, false );
+	}
+
+	/** Saves and returns the list minus every ring that shares a hash with $hashes. */
+	private function without( string $option, array $hashes ): array {
+		$rings = array_filter( (array) get_option( $option, array() ), fn( $list ) => ! array_intersect( $list, $hashes ) );
+		update_option( $option, $rings, false );
+		return $rings;
+	}
+
+	/** @return array{blocked:bool,allowed:bool} Whether a ring (its hashes) is on either list. */
+	public function ring_state( array $hashes ): array {
+		$hashes = array_filter( $hashes );
+		return array(
+			'blocked' => $this->hits( self::RINGS, $hashes ),
+			'allowed' => $this->hits( self::ALLOWED, $hashes ),
+		);
+	}
+
+	private function hits( string $option, array $hashes ): bool {
+		foreach ( (array) get_option( $option, array() ) as $list ) {
+			if ( array_intersect( $hashes, $list ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Erase support: drop these hashes from blocked rings and these order IDs from the event log. */
 	public function forget( array $hashes, array $order_ids ): void {
 		$hashes = array_filter( $hashes );
-		$rings  = array();
-		foreach ( $this->blocked_rings() as $key => $list ) {
-			$list = array_values( array_diff( $list, $hashes ) );
-			if ( $list ) {
-				$rings[ $key ] = $list;
+		foreach ( array( self::RINGS, self::ALLOWED ) as $option ) {
+			$rings = array();
+			foreach ( (array) get_option( $option, array() ) as $key => $list ) {
+				$list = array_values( array_diff( $list, $hashes ) );
+				if ( $list ) {
+					$rings[ $key ] = $list;
+				}
 			}
+			update_option( $option, $rings, false );
 		}
-		update_option( self::RINGS, $rings, false );
 		$events = (array) get_option( self::EVENTS, array() );
 		foreach ( $events as &$e ) {
 			$e['ids'] = array_values( array_diff( $e['ids'], $order_ids ) );
@@ -87,12 +114,15 @@ class BlockLog {
 
 	/** True if any of the shopper's hashes belongs to a blocked ring. */
 	public function is_blocked( array $h ): bool {
-		$mine = array_filter( array( $h['email_h'] ?? '', $h['phone_h'] ?? '', $h['addr_h'] ?? '' ) );
-		foreach ( $this->blocked_rings() as $hashes ) {
-			if ( array_intersect( $mine, $hashes ) ) {
-				return true;
-			}
-		}
-		return false;
+		return $this->hits( self::RINGS, $this->mine( $h ) );
+	}
+
+	/** True if any of the shopper's hashes belongs to an allowed (whitelisted) ring. */
+	public function is_allowed( array $h ): bool {
+		return $this->hits( self::ALLOWED, $this->mine( $h ) );
+	}
+
+	private function mine( array $h ): array {
+		return array_filter( array( $h['email_h'] ?? '', $h['phone_h'] ?? '', $h['addr_h'] ?? '' ) );
 	}
 }

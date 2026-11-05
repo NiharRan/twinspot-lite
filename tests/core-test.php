@@ -35,3 +35,15 @@ eq(
 	'ring links'
 );
 echo "ok links\n";
+
+eq(
+	Rings::shared( array( 'email_h' => 'z', 'phone_h' => 'p', 'addr_h' => 'x' ), array(
+		array( 'email_h' => 'a', 'phone_h' => 'p', 'addr_h' => '' ),
+		array( 'email_h' => 'b', 'phone_h' => '', 'addr_h' => 'x' ),
+	) ),
+	array( 'phone', 'address' ),
+	'shared links'
+);
+eq( Rings::shared( array( 'email_h' => '', 'phone_h' => '', 'addr_h' => '' ), array( array( 'email_h' => '', 'phone_h' => '', 'addr_h' => '' ) ) ), array(), 'empty hashes match nothing' );
+eq( \Twinspot_Lite\Core\Csv::row( array( 'a"b', '=1+1', 5 ) ), "\"a\"\"b\",\"'=1+1\",\"5\"\r\n", 'csv row' );
+echo "ok shared+csv\n";

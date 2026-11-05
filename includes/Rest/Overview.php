@@ -10,6 +10,7 @@ namespace Twinspot_Lite\Rest;
 use Twinspot_Lite\Core\Rings;
 use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
 use Twinspot_Lite\Features\CouponGuard;
 
@@ -22,11 +23,14 @@ class Overview {
 	private $fingerprinter;
 	/** @var BlockLog */
 	private $log;
+	/** @var Events */
+	private $events;
 
-	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $log ) {
+	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $log, Events $events ) {
 		$this->edges         = $edges;
 		$this->fingerprinter = $fingerprinter;
 		$this->log           = $log;
+		$this->events        = $events;
 	}
 
 	/**
@@ -245,10 +249,12 @@ class Overview {
 		}
 
 		$blocks = $this->log->for_orders( $ring );
+		$state  = $this->log->ring_state( array_merge( ...array_map( fn( $r ) => array( $r['email_h'], $r['phone_h'], $r['addr_h'] ), $rows ) ) );
 		return array(
 			'key'        => $ring[0],
 			'cluster'    => 'R-' . ( $ring[0] % Edges::SAMPLE_BASE ),
-			'blocked'    => isset( $this->log->blocked_rings()[ $ring[0] ] ),
+			'blocked'    => $state['blocked'],
+			'allowed'    => $state['allowed'],
 			'attempts'   => $blocks['count'],
 			'prevented'  => $blocks['amount'] > 0 ? $this->money( $blocks['amount'] ) : '',
 			'ids'        => $ring,
@@ -266,6 +272,15 @@ class Overview {
 
 	/** Block or unblock a whole ring from coupons. Returns the new state. */
 	public function set_blocked( int $order_id, bool $on ): ?bool {
+		return $this->set_rule( $order_id, $on, 'blocked' );
+	}
+
+	/** Allow (whitelist) or stop allowing a ring: it is never blocked or held while allowed. Returns the new state. */
+	public function set_allowed( int $order_id, bool $on ): ?bool {
+		return $this->set_rule( $order_id, $on, 'allowed' );
+	}
+
+	private function set_rule( int $order_id, bool $on, string $rule ): ?bool {
 		$ring = $this->detail( $order_id );
 		if ( ! $ring ) {
 			return null;
@@ -276,7 +291,14 @@ class Overview {
 				$hashes = array_merge( $hashes, array( $r['email_h'], $r['phone_h'], $r['addr_h'] ) );
 			}
 		}
-		$this->log->set_ring_blocked( $ring['key'], $hashes, $on );
+		'blocked' === $rule ? $this->log->set_ring_blocked( $ring['key'], $hashes, $on ) : $this->log->set_ring_allowed( $ring['key'], $hashes, $on );
+		$this->events->add(
+			'rule',
+			array(
+				'linked' => $ring['ids'],
+				'meta'   => array( 'a' => $rule . ( $on ? '' : '_off' ) ),
+			)
+		);
 		return $on;
 	}
 }

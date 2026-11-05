@@ -7,7 +7,6 @@
 
 namespace Twinspot_Lite\Rest;
 
-use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Features\Importer;
 use Twinspot_Lite\Module;
 
@@ -21,13 +20,13 @@ class Routes implements Module {
 	/** @var Importer */
 	private $importer;
 
-	/** @var BlockLog */
-	private $log;
+	/** @var Activity */
+	private $activity;
 
-	public function __construct( Overview $overview, Importer $importer, BlockLog $log ) {
-		$this->log      = $log;
+	public function __construct( Overview $overview, Importer $importer, Activity $activity ) {
 		$this->overview = $overview;
 		$this->importer = $importer;
+		$this->activity = $activity;
 	}
 
 	public function register(): void {
@@ -103,6 +102,18 @@ class Routes implements Module {
 		);
 		register_rest_route(
 			self::NAMESPACE,
+			'/ring/(?P<order_id>\\d+)/allow',
+			array(
+				'methods'             => array( 'POST', 'DELETE' ),
+				'permission_callback' => $permission,
+				'callback'            => function ( \WP_REST_Request $req ) {
+					$on = $this->overview->set_allowed( (int) $req['order_id'], 'POST' === $req->get_method() );
+					return null === $on ? new \WP_Error( 'twinspot_lite_no_ring', __( 'This order is not in a ring.', 'twinspot-lite' ), array( 'status' => 404 ) ) : array( 'allowed' => $on );
+				},
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
 			'/import',
 			array(
 				'methods'             => 'POST',
@@ -122,7 +133,18 @@ class Routes implements Module {
 			array(
 				'methods'             => 'GET',
 				'permission_callback' => $permission,
-				'callback'            => fn() => array( 'days' => $this->log->days() ),
+				'callback'            => fn( \WP_REST_Request $req ) => $this->activity->build( $req->get_params() ),
+				'args'                => $this->activity_args(),
+			)
+		);
+		register_rest_route(
+			self::NAMESPACE,
+			'/activity/export',
+			array(
+				'methods'             => 'GET',
+				'permission_callback' => $permission,
+				'callback'            => fn( \WP_REST_Request $req ) => $this->activity->export( $req->get_params() ),
+				'args'                => $this->activity_args(),
 			)
 		);
 		register_rest_route(
@@ -155,6 +177,45 @@ class Routes implements Module {
 					return array( 'ok' => true );
 				},
 			)
+		);
+	}
+
+	private function activity_args(): array {
+		$text = array(
+			'type'     => 'string',
+			'default'  => '',
+			'enum'     => array( '', 'blocked', 'clean', 'ring', 'held', 'system' ),
+		);
+		return array(
+			'range'    => array(
+				'type'    => 'string',
+				'default' => '24h',
+				'enum'    => array( '24h', '7d', '30d' ),
+			),
+			'type'     => $text,
+			'severity' => array(
+				'type'    => 'string',
+				'default' => '',
+				'enum'    => array( '', 'blocked', 'flagged', 'allowed', 'system' ),
+			),
+			'search'   => array(
+				'type'              => 'string',
+				'default'           => '',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'page'     => array(
+				'type'              => 'integer',
+				'default'           => 1,
+				'minimum'           => 1,
+				'sanitize_callback' => 'absint',
+			),
+			'per_page' => array(
+				'type'              => 'integer',
+				'default'           => 25,
+				'minimum'           => 1,
+				'maximum'           => 100,
+				'sanitize_callback' => 'absint',
+			),
 		);
 	}
 }

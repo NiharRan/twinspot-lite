@@ -10,12 +10,14 @@ namespace Twinspot_Lite;
 use Twinspot_Lite\Admin\Page;
 use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
 use Twinspot_Lite\Features\Compat;
 use Twinspot_Lite\Features\CouponGuard;
 use Twinspot_Lite\Features\Importer;
 use Twinspot_Lite\Features\OrderTracker;
 use Twinspot_Lite\Features\Privacy;
+use Twinspot_Lite\Rest\Activity;
 use Twinspot_Lite\Rest\Overview;
 use Twinspot_Lite\Rest\Routes;
 
@@ -31,6 +33,7 @@ class Plugin {
 
 	public static function activate(): void {
 		( new Edges() )->install();
+		( new Events() )->install();
 		( new Fingerprinter() )->install();
 	}
 
@@ -51,14 +54,16 @@ class Plugin {
 		$edges   = new Edges();
 		$prints  = new Fingerprinter();
 		$log     = new BlockLog();
-		$tracker = new OrderTracker( $edges, $prints );
+		$events  = new Events();
+		$events->maybe_install(); // Sites updated from an older version get the log table here.
+		$tracker = new OrderTracker( $edges, $prints, $log, $events );
 
 		return array(
 			new Compat( $this->file ),
 			$tracker,
-			new CouponGuard( $edges, $prints, $log ),
-			new Privacy( $edges, $prints, $log ),
-			new Routes( new Overview( $edges, $prints, $log ), new Importer( $tracker, $edges, $prints ), $log ),
+			new CouponGuard( $edges, $prints, $log, $events ),
+			new Privacy( $edges, $prints, $log, $events ),
+			new Routes( new Overview( $edges, $prints, $log, $events ), new Importer( $tracker, $edges, $prints, $events ), new Activity( $events, $edges, $log ) ),
 			new Page( plugin_dir_path( $this->file ) ),
 		);
 	}

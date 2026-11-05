@@ -7,7 +7,9 @@
 
 namespace Twinspot_Lite\Features;
 
+use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
 use Twinspot_Lite\Module;
 
@@ -18,10 +20,16 @@ class OrderTracker implements Module {
 	private $edges;
 	/** @var Fingerprinter */
 	private $fingerprinter;
+	/** @var BlockLog */
+	private $log;
+	/** @var Events */
+	private $events;
 
-	public function __construct( Edges $edges, Fingerprinter $fingerprinter ) {
+	public function __construct( Edges $edges, Fingerprinter $fingerprinter, BlockLog $log, Events $events ) {
 		$this->edges         = $edges;
 		$this->fingerprinter = $fingerprinter;
+		$this->log           = $log;
+		$this->events        = $events;
 	}
 
 	public function register(): void {
@@ -64,19 +72,44 @@ class OrderTracker implements Module {
 		}
 	}
 
-	/** New checkout order: index it, then hold it if hold mode is on and a "new customers only" coupon was used by a repeat shopper. */
+	/** New checkout order: index it, log each coupon decision, and hold the order if hold mode is on and a "new customers only" coupon was used by a repeat shopper. */
 	public function created( $order ): void {
 		$this->record( $order );
 		$this->note_blocked_coupon( $order );
-		if ( ! $order instanceof \WC_Order || 'yes' !== get_option( 'twinspot_lite_hold_orders' ) || 'no' !== get_option( 'twinspot_lite_enabled' ) ) {
-			return; // With blocking on, the coupon was already refused at checkout.
+		if ( ! $order instanceof \WC_Order || ! $order->get_coupon_codes() ) {
+			return;
 		}
-		$first_only = false;
+		$h       = $this->fingerprinter->hashes( $order->get_billing_email(), $order->get_billing_phone(), $order->get_billing_address_1(), $order->get_billing_postcode() );
+		$m       = $this->edges->matches( $h, $order->get_id() );
+		$match   = $m ? array(
+			'linked'  => $m,
+			'matched' => $this->edges->match_types( $h, $m ),
+		) : array();
+		$allowed = $this->log->is_allowed( $h );
+		$hold    = 'yes' === get_option( 'twinspot_lite_hold_orders' ) && 'no' === get_option( 'twinspot_lite_enabled' ); // With blocking on, the coupon was already refused at checkout.
+		$guard   = $hold || 'no' !== get_option( 'twinspot_lite_enabled' );
+		$saved   = array();
+		foreach ( $order->get_items( 'coupon' ) as $item ) {
+			$saved[ $item->get_code() ] = (float) $item->get_discount();
+		}
+		$held = false;
 		foreach ( $order->get_coupon_codes() as $code ) {
-			$first_only = $first_only || 'yes' === ( new \WC_Coupon( $code ) )->get_meta( CouponGuard::META );
+			$first = 'yes' === ( new \WC_Coupon( $code ) )->get_meta( CouponGuard::META );
+			$base  = array(
+				'coupon'   => $code,
+				'order_id' => $order->get_id(),
+				'amount'   => $saved[ $code ] ?? 0,
+			);
+			if ( $first && $hold && $m && ! $allowed ) {
+				$this->events->add( 'held', $base + $match );
+				$held = true;
+				continue;
+			}
+			// Why the coupon went through: not restricted, guard paused, ring allowed, nothing matched, or a match found only now (billing details were missing at coupon check).
+			$why = ! $first ? 'open' : ( ! $guard ? 'paused' : ( ! $m ? 'verified' : ( $allowed ? 'allowed' : 'late' ) ) );
+			$this->events->add( 'clean', $base + ( $first ? $match : array() ) + array( 'meta' => array( 'why' => $why ) ) );
 		}
-		$m = $first_only ? $this->edges->matches( $this->fingerprinter->hashes( $order->get_billing_email(), $order->get_billing_phone(), $order->get_billing_address_1(), $order->get_billing_postcode() ), $order->get_id() ) : array();
-		if ( $m ) {
+		if ( $held ) {
 			$order->update_meta_data( '_twinspot_lite_held', 1 );
 			$order->update_status( 'on-hold', __( 'Twinspot: held for review, a new-customers-only coupon was used by a returning shopper.', 'twinspot-lite' ) );
 		}
@@ -119,7 +152,8 @@ class OrderTracker implements Module {
 		return '<br><span style="' . $chip . '">' . esc_html__( 'Linked ring', 'twinspot-lite' ) . '</span> <span style="' . $chip . '">' . esc_html( sprintf( _n( '%d order', '%d orders', $orders, 'twinspot-lite' ), $orders ) ) . '</span> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Inspect tree →', 'twinspot-lite' ) . '</a>';
 	}
 
-	public function record( $order ): void {
+	/** @param bool $log Log a "ring" event when the order links to earlier ones (off for the bulk import). */
+	public function record( $order, bool $log = true ): void {
 		if ( ! $order instanceof \WC_Order ) {
 			return;
 		}
@@ -136,6 +170,16 @@ class OrderTracker implements Module {
 			);
 			$order->update_meta_data( '_twinspot_lite_noted', 1 );
 			$order->save();
+			if ( $log ) {
+				$this->events->add(
+					'ring',
+					array(
+						'order_id' => $order->get_id(),
+						'linked'   => $m,
+						'matched'  => $this->edges->match_types( $h, $m ),
+					)
+				);
+			}
 		}
 	}
 

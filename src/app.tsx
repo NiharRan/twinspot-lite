@@ -105,7 +105,7 @@ export function App() {
 			) }
 			{ ringKey === null && tab === 'accounts' && <Accounts onOpen={ setRingKey } data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
 			{ ringKey === null && tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
-			{ ringKey === null && tab === 'activity' && <Activity /> }
+			{ ringKey === null && tab === 'activity' && <Activity onOpen={ setRingKey } /> }
 			{ ringKey === null && tab === 'settings' && <Settings saved={ settings } onSave={ save } /> }
 		</MotionConfig>
 	);

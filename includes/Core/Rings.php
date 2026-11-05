@@ -67,4 +67,18 @@ class Rings {
 		}
 		return $links;
 	}
+
+	/**
+	 * Which identifiers a shopper (hashes $h) shares with the given earlier order rows.
+	 * Returns a subset of ['email','phone','address'].
+	 */
+	public static function shared( array $h, array $rows ): array {
+		$out = array();
+		foreach ( self::LINKS as $col => $name ) {
+			if ( ! empty( $h[ $col ] ) && in_array( $h[ $col ], array_column( $rows, $col ), true ) ) {
+				$out[] = $name;
+			}
+		}
+		return $out;
+	}
 }

@@ -1,5 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
-import type { Overview, RingDetail } from '../types';
+import type { Activity, ActivityFilters, Overview, RingDetail } from '../types';
 
 const base = '/twinspot-lite/v1';
 
@@ -16,7 +16,13 @@ export interface ImportBatch {
 
 export const importBatch = ( page: number ) => apiFetch< ImportBatch >( { path: `${ base }/import?page=${ page }`, method: 'POST' } );
 
-export const getActivity = () => apiFetch< { days: Record< string, number > } >( { path: `${ base }/activity` } );
+const query = ( f: ActivityFilters ) => new URLSearchParams( Object.entries( f ).map( ( [ k, v ] ) => [ k, String( v ) ] ) ).toString();
+
+export const getActivity = ( f: ActivityFilters ) => apiFetch< Activity >( { path: `${ base }/activity?${ query( f ) }` } );
+
+export const exportActivity = ( f: ActivityFilters ) => apiFetch< { filename: string; csv: string } >( { path: `${ base }/activity/export?${ query( f ) }` } );
+
+export const allowRing = ( orderId: number, on: boolean ) => apiFetch< { allowed: boolean } >( { path: `${ base }/ring/${ orderId }/allow`, method: on ? 'POST' : 'DELETE' } );
 
 export interface SettingsData {
 	enabled: boolean;
