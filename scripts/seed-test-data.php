@@ -39,7 +39,7 @@ $orders = array(
 	array( 'alice.smith@gmail.com', '555-111-2222', '12 Oak Street', '90210', 'completed', '' ),
 	array( 'alicesmith+promo@gmail.com', '555-999-0001', '99 Elm Road', '10001', 'processing', '' ),
 	array( 'alice.new@example.com', '(555) 111-2222', '5 Pine Ave', '60601', 'processing', '' ),
-	array( 'third.person@example.com', '555-777-0000', '5 pine avenue', '60601', 'processing', 'WELCOME15' ),
+	array( 'third.person@example.com', '555-777-0000', '5 PINE AVE', '60601', 'processing', 'WELCOME15' ),
 	// Ring 2: shared address only.
 	array( 'bob@example.com', '555-222-3333', '7 River Lane', '30301', 'completed', '' ),
 	array( 'robert@example.org', '555-222-4444', '7 River Lane', '30301', 'processing', '' ),
