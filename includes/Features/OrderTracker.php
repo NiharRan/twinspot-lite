@@ -94,7 +94,7 @@ class OrderTracker implements Module {
 			sprintf(
 				/* translators: 1: Twinspot label, 2: linked order numbers, 3: coupon code, 4: ring link */
 				__( '%1$s shares email, phone or address with order(s) %2$s. Blocked coupon “%3$s” at checkout. %4$s', 'twinspot-lite' ),
-				'<strong>' . esc_html__( 'Twinspot System Alert', 'twinspot-lite' ) . ':</strong>',
+				'<strong>' . esc_html__( 'Twinspot System Alert', 'twinspot-lite' ) . '</strong> <span style="background:#ffdad6;color:#dc2626;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:600">' . esc_html__( 'Coupon Blocked', 'twinspot-lite' ) . '</span><br>',
 				$ids ? $this->links( $ids ) : esc_html__( '(none left)', 'twinspot-lite' ),
 				esc_html( $b['code'] ),
 				$this->ring_link( $order->get_id(), count( $ids ) + 1 )
@@ -115,7 +115,8 @@ class OrderTracker implements Module {
 	private function ring_link( int $order_id, int $orders ): string {
 		$url = add_query_arg( array( 'page' => 'twinspot-lite', 'ring' => $order_id ), admin_url( 'admin.php' ) );
 		/* translators: 1: number of orders in the ring */
-		return esc_html( sprintf( _n( 'Linked ring: %d order.', 'Linked ring: %d orders.', $orders, 'twinspot-lite' ), $orders ) ) . ' <a href="' . esc_url( $url ) . '">' . esc_html__( 'Inspect tree →', 'twinspot-lite' ) . '</a>';
+		$chip = 'background:#e7eeff;border-radius:6px;padding:1px 8px;font-size:11px';
+		return '<br><span style="' . $chip . '">' . esc_html__( 'Linked ring', 'twinspot-lite' ) . '</span> <span style="' . $chip . '">' . esc_html( sprintf( _n( '%d order', '%d orders', $orders, 'twinspot-lite' ), $orders ) ) . '</span> <a href="' . esc_url( $url ) . '">' . esc_html__( 'Inspect tree →', 'twinspot-lite' ) . '</a>';
 	}
 
 	public function record( $order ): void {
