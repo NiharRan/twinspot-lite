@@ -22,3 +22,14 @@ eq( count( $rings ), 1, 'one ring' );
 sort( $rings[0] );
 eq( $rings[0], array( 1, 2, 3 ), 'transitive ring' );
 echo "ok\n";
+// Linked-by: email shared by 1-2, address shared by 2-3, phone unique.
+eq(
+	twinspot_lite_ring_links( array(
+		array( 'email_h' => 'a', 'phone_h' => '1', 'addr_h' => '' ),
+		array( 'email_h' => 'a', 'phone_h' => '2', 'addr_h' => 'x' ),
+		array( 'email_h' => 'c', 'phone_h' => '3', 'addr_h' => 'x' ),
+	) ),
+	array( 'email', 'address' ),
+	'ring links'
+);
+echo "ok links\n";

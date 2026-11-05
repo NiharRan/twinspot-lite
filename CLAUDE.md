@@ -8,6 +8,7 @@ Background research: `docs/woocommerce-research.md` (competitors, pricing, GDPR,
 
 - No external server calls. Everything runs inside the store.
 - `twinspot-lite.php`: header, HPOS and Blocks compatibility, table creation on activation, order recording, coupon check, admin page, past-order import.
+- Admin UI: React app in `src/` (shadcn-style components, Tailwind scoped to `#twinspot-root`, lucide icons, motion), built with `npm run build` into git-ignored `build/`. REST routes in `includes/rest.php`, mount point in `includes/admin.php`. Details: `docs/admin-ui-design.md`. Visual reference: `design/`.
 - `includes/core.php`: pure PHP (no WordPress calls): email/phone/address normalization, HMAC hashing, ring detection (union-find over shared hashes). Tested by `php tests/core-test.php`.
 - `uninstall.php`: drops table and removes the secret.
 - Data: table `{prefix}twinspot_lite_edges` (order_id, email_h, phone_h, addr_h, ip_h). All values are HMAC-SHA256 hashes keyed by the `twinspot_lite_secret` option. IP is stored but never used to match (shared networks).
@@ -16,7 +17,7 @@ Background research: `docs/woocommerce-research.md` (competitors, pricing, GDPR,
 
 ## WordPress.org readiness
 
-Rules summary: `docs/wordpress-org-rules.md`. Done in v0.1.0: `twinspot_lite_` prefix everywhere, `readme.txt`, full header, translatable strings (text domain `twinspot-lite`), `ABSPATH` guards, privacy exporter, eraser and policy text, `.distignore` plus `scripts/build-zip.sh` (writes `dist/twinspot-lite.zip`).
+Run `npm ci && npm run build` (type check: `npm run typecheck`) before testing the admin screen or zipping. Rules summary: `docs/wordpress-org-rules.md`. Done in v0.1.0: `twinspot_lite_` prefix everywhere, `readme.txt`, full header, translatable strings (text domain `twinspot-lite`), `ABSPATH` guards, privacy exporter, eraser and policy text, `.distignore` plus `scripts/build-zip.sh` (writes `dist/twinspot-lite.zip`).
 
 Still open before submitting:
 1. Confirm `Contributors` in `readme.txt` is the real WordPress.org username and `Tested up to` is the current WordPress major version.

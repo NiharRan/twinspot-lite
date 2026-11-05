@@ -1,0 +1,49 @@
+@tailwind utilities;
+
+/* Minimal base, scoped to our root, in place of Tailwind's preflight. */
+#twinspot-root,
+#twinspot-root *,
+#twinspot-root *::before,
+#twinspot-root *::after {
+	box-sizing: border-box;
+	border: 0 solid #e2e8f0;
+}
+#twinspot-root {
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+	font-size: 14px;
+	line-height: 20px;
+	color: #1e293b;
+	margin: 20px 20px 0 0;
+}
+#twinspot-root h1,
+#twinspot-root h2,
+#twinspot-root h3,
+#twinspot-root p {
+	margin: 0;
+	padding: 0;
+}
+#twinspot-root button,
+#twinspot-root input,
+#twinspot-root select {
+	font: inherit;
+	color: inherit;
+	margin: 0;
+}
+#twinspot-root button {
+	cursor: pointer;
+	background: none;
+}
+#twinspot-root a {
+	text-decoration: none;
+}
+#twinspot-root svg {
+	display: block;
+	flex-shrink: 0;
+}
+#twinspot-root table {
+	border-collapse: collapse;
+	width: 100%;
+}
+#twinspot-root .tabular {
+	font-variant-numeric: tabular-nums;
+}

@@ -72,3 +72,23 @@ function twinspot_lite_rings( array $rows ) {
 		)
 	);
 }
+
+/**
+ * Which identifiers are shared by at least two orders in one ring.
+ * $rows: edge rows of the ring's orders. Returns a subset of ['email','phone','address'].
+ */
+function twinspot_lite_ring_links( array $rows ) {
+	$map   = array(
+		'email_h' => 'email',
+		'phone_h' => 'phone',
+		'addr_h'  => 'address',
+	);
+	$links = array();
+	foreach ( $map as $col => $name ) {
+		$counts = array_count_values( array_filter( array_column( $rows, $col ) ) );
+		if ( $counts && max( $counts ) > 1 ) {
+			$links[] = $name;
+		}
+	}
+	return $links;
+}

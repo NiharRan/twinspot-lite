@@ -3,7 +3,7 @@
  * Plugin Name:       Twinspot Lite
  * Description:       Spot rings of linked accounts and block repeat welcome coupons at WooCommerce checkout. Runs on your store; no data leaves your site.
  * Version:           0.1.0
- * Requires at least: 6.5
+ * Requires at least: 6.6
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * WC requires at least: 8.0
@@ -21,6 +21,7 @@ const TWINSPOT_LITE_VERSION = '0.1.0';
 
 require __DIR__ . '/includes/core.php';
 require __DIR__ . '/includes/privacy.php';
+require __DIR__ . '/includes/rest.php';
 require __DIR__ . '/includes/admin.php';
 
 add_action(
@@ -107,6 +108,15 @@ function twinspot_lite_record( $order ) {
 }
 add_action( 'woocommerce_checkout_order_created', 'twinspot_lite_record' );             // Classic checkout.
 add_action( 'woocommerce_store_api_checkout_order_processed', 'twinspot_lite_record' );  // Block checkout.
+// A failed or cancelled order can later succeed on retry, so index it again once it reaches an active status.
+foreach ( array( 'processing', 'completed', 'on-hold' ) as $twinspot_lite_status ) {
+	add_action(
+		'woocommerce_order_status_' . $twinspot_lite_status,
+		function ( $order_id ) {
+			twinspot_lite_record( wc_get_order( $order_id ) );
+		}
+	);
+}
 add_action( 'woocommerce_order_status_cancelled', 'twinspot_lite_forget' );
 add_action( 'woocommerce_order_status_failed', 'twinspot_lite_forget' );
 add_action( 'woocommerce_delete_order', 'twinspot_lite_forget' );
@@ -148,6 +158,7 @@ add_filter(
 		$c = WC()->customer;
 		$h = twinspot_lite_hashes( $c->get_billing_email(), $c->get_billing_phone(), $c->get_billing_address_1(), $c->get_billing_postcode() );
 		if ( twinspot_lite_matches( $h ) ) { // Empty details match nothing, so this fails open.
+			twinspot_lite_log_block();
 			throw new Exception( esc_html__( 'Sorry, this coupon is only for first-time customers.', 'twinspot-lite' ) );
 		}
 		return $valid;

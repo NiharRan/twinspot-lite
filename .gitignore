@@ -1,2 +1,8 @@
 dist/
 .DS_Store
+
+design/
+node_modules/
+build/
+node_modules/
+node_modules
