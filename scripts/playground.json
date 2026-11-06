@@ -1,0 +1,9 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/wp-admin/admin.php?page=twinspot-lite",
+  "preferredVersions": { "php": "8.2", "wp": "latest" },
+  "login": true,
+  "steps": [
+    { "step": "installPlugin", "pluginData": { "resource": "wordpress.org/plugins", "slug": "woocommerce" }, "options": { "activate": true } }
+  ]
+}
