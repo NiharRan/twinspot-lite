@@ -91,18 +91,15 @@ class Edges {
 	 */
 	public function matches( array $h, int $exclude = 0 ): array {
 		global $wpdb;
-		$where = array();
-		$args  = array( $exclude, self::SAMPLE_BASE );
+		$ids = array();
 		foreach ( array_keys( Rings::LINKS ) as $col ) {
-			if ( ! empty( $h[ $col ] ) ) {
-				$where[] = "$col = %s"; // Column is from a fixed list.
-				$args[]  = $h[ $col ];
+			if ( empty( $h[ $col ] ) ) {
+				continue;
 			}
+			$found = $wpdb->get_col( $wpdb->prepare( 'SELECT order_id FROM %i WHERE order_id <> %d AND order_id < %d AND %i = %s LIMIT 20', $this->table(), $exclude, self::SAMPLE_BASE, $col, $h[ $col ] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$ids   = array_merge( $ids, array_map( 'intval', $found ) );
 		}
-		if ( ! $where ) {
-			return array();
-		}
-		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT order_id FROM {$this->table()} WHERE order_id <> %d AND order_id < %d AND (" . implode( ' OR ', $where ) . ') LIMIT 20', $args ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built above.
+		return array_slice( array_values( array_unique( $ids ) ), 0, 20 );
 	}
 
 	/** Which of email, phone, address a shopper shares with the given earlier orders. */

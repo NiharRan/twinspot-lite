@@ -101,9 +101,9 @@ class Events {
 	 */
 	public function query( array $a ): array {
 		global $wpdb;
-		[ $where, $args ] = $this->where( $a );
-		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$this->table()} WHERE $where", $args ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built in where().
-		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table()} WHERE $where ORDER BY id DESC LIMIT %d OFFSET %d", array_merge( $args, array( (int) $a['per_page'], (int) ( ( $a['page'] - 1 ) * $a['per_page'] ) ) ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- placeholders built in where().
+		$where = $this->where( $a ); // Already prepared.
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table()} WHERE $where" ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where is prepared in where().
+		$rows  = $wpdb->get_results( "SELECT * FROM {$this->table()} WHERE $where ORDER BY id DESC LIMIT " . (int) $a['per_page'] . ' OFFSET ' . (int) ( ( $a['page'] - 1 ) * $a['per_page'] ), ARRAY_A ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where is prepared in where(); limits are cast to int.
 		return array( 'rows' => $rows, 'total' => $total );
 	}
 
@@ -134,8 +134,8 @@ class Events {
 		$wpdb->query( "UPDATE {$this->table()} SET linked = '' WHERE linked = ','" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
-	/** @return array{0:string,1:array} SQL with placeholders, and its values. */
-	private function where( array $a ): array {
+	/** Prepared WHERE condition. */
+	private function where( array $a ): string {
 		$w    = array( 'created >= %s' );
 		$args = array( gmdate( 'Y-m-d H:i:s', $a['since'] ) );
 		foreach ( array( 'type', 'severity' ) as $key ) {
@@ -156,6 +156,6 @@ class Events {
 			}
 			$w[] = "($like)";
 		}
-		return array( implode( ' AND ', $w ), $args );
+		return $GLOBALS['wpdb']->prepare( implode( ' AND ', $w ), $args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built above.
 	}
 }
