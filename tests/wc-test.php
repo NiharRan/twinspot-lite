@@ -3,7 +3,7 @@
  * Dev only. Integration test against a real WooCommerce site. Not shipped (see .distignore).
  *
  * Run from the WordPress root:  wp eval-file wp-content/plugins/twinspot-lite/tests/wc-test.php
- * Use a throwaway site. It creates products, coupons and orders (all tagged _twinspot_test) and deletes them at the end.
+ * Creates products, coupons and orders (orders tagged _twinspot_test) and deletes them at the end. Existing orders, rules and the two shield settings are left as they were. Still best run on a dev site.
  * Exit code is 1 if any check fails.
  */
 
@@ -63,14 +63,11 @@ function ts_apply( $code, $email, $phone = '', $line1 = '', $postcode = '' ) {
 	return array( $ok, $n );
 }
 
+/** Delete only what this script created. Deleting an order also drops its index row (woocommerce_delete_order), so real data is untouched. */
 function ts_clean() {
-	global $wpdb;
 	foreach ( wc_get_orders( array( 'limit' => -1, 'status' => array_keys( wc_get_order_statuses() ), 'meta_key' => '_twinspot_test', 'meta_value' => '1' ) ) as $o ) { // phpcs:ignore WordPress.DB.SlowDBQuery -- dev test.
 		$o->delete( true );
 	}
-	$wpdb->query( 'DELETE FROM ' . ( new Edges() )->table() ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- dev test.
-	delete_option( BlockLog::ALLOWED );
-	delete_option( BlockLog::RINGS );
 	update_option( 'twinspot_lite_enabled', 'yes' );
 	update_option( 'twinspot_lite_hold_orders', 'no' );
 }
@@ -84,6 +81,7 @@ $edges = new Edges();
 ts_check( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $edges->table() ) ) === $edges->table(), 'edges table exists' );
 ts_check( (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->prefix . 'twinspot_lite_events' ) ), 'events table exists' );
 
+$ts_saved = array( get_option( 'twinspot_lite_enabled' ), get_option( 'twinspot_lite_hold_orders' ) ); // Restored at the end.
 ts_clean();
 $GLOBALS['ts_product'] = $ts_product = new WC_Product_Simple();
 $ts_product->set_name( 'TS Test Product' );
@@ -205,6 +203,8 @@ ts_check( in_array( $res->get_status(), array( 401, 403 ), true ), 'REST refuses
 
 // ---------------------------------------------------------------- done
 ts_clean();
+update_option( 'twinspot_lite_enabled', $ts_saved[0] ? $ts_saved[0] : 'yes' );
+update_option( 'twinspot_lite_hold_orders', $ts_saved[1] ? $ts_saved[1] : 'no' );
 $ts_product->delete( true );
 foreach ( array( 'TSFIRST', 'TSOPEN' ) as $code ) {
 	wp_delete_post( wc_get_coupon_id_by_code( $code ), true );
