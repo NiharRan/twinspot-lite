@@ -31,7 +31,7 @@ Tested so far: `php tests/core-test.php`, `tests/wc-test.php` (WP-CLI, real WooC
 
 ## Cloud cluster lookup
 
-- The toggle is disabled with a "Coming soon" badge and stores nothing. No external calls exist.
+- No toggle in Settings (removed until the feature exists). No external calls exist.
 - Building it needs: opt-in, a documented data flow in the readme, legal/GDPR review, a hosted backend, and a consent record. See the roadmap in `CLAUDE.md`.
 
 ## Behaviour to revisit

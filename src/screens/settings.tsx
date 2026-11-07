@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { Ban, Check, CheckCircle2, CloudCog, CreditCard, Info, Lock, Package, PauseCircle, RotateCcw, Save, ScanSearch, ShieldCheck, Store, Tag, Ticket, User, Wallet, X, XCircle } from 'lucide-react';
+import { Ban, Check, CheckCircle2, CreditCard, Info, Lock, Package, PauseCircle, RotateCcw, Save, ScanSearch, ShieldCheck, Store, Tag, Ticket, User, Wallet, X, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card } from '../components/ui/card';
@@ -83,7 +83,6 @@ function Preview( { draft }: { draft: SettingsData } ) {
 				<div className="flex items-center gap-3 border-b border-line bg-primary-soft px-4 py-2.5">
 					<span className="flex gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-slate-300" /><i className="h-2.5 w-2.5 rounded-full bg-slate-300" /><i className="h-2.5 w-2.5 rounded-full bg-slate-300" /></span>
 					<span className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1 font-mono text-[12px] text-muted"><Lock size={ 12 } />mystore.local/checkout/</span>
-					<span className="ml-auto text-[11px] font-semibold uppercase tracking-wide text-muted">{ __( 'Frontend storefront canvas', 'twinspot-lite' ) }</span>
 				</div>
 				<div className="grid gap-5 p-5 md:grid-cols-[3fr_2fr]">
 					<div className="space-y-4">
@@ -123,7 +122,6 @@ function Preview( { draft }: { draft: SettingsData } ) {
 								) }
 								{ ! blocked && <div className="flex items-center gap-2 rounded-lg border border-success-line bg-success-soft p-3 text-success"><Check size={ 16 } />{ __( 'Coupon code applied successfully.', 'twinspot-lite' ) }</div> }
 							</div>
-							<p className="mt-2 flex items-center gap-2 text-[12px] text-muted"><CheckCircle2 size={ 14 } /><span><b>{ __( 'Non-intrusive shopper messaging:', 'twinspot-lite' ) }</b> { __( 'zero mention of risk scoring, fingerprints, or internal triggers.', 'twinspot-lite' ) }</span></p>
 						</div>
 
 						<div className="rounded-xl border border-line p-4">
@@ -156,10 +154,9 @@ function Preview( { draft }: { draft: SettingsData } ) {
 								</div>
 							</div>
 							<div className="mt-3 flex items-end justify-between border-t border-line pt-3">
-								<span><span className="block font-semibold">{ __( 'Total Due', 'twinspot-lite' ) }</span><span className="text-[12px] text-muted">{ __( 'Includes all local taxes', 'twinspot-lite' ) }</span></span>
+								<span><span className="block font-semibold">{ __( 'Total Due', 'twinspot-lite' ) }</span></span>
 								<span className="tabular text-[22px] font-semibold">{ money( total ) }</span>
 							</div>
-							<p className="mt-3 flex items-center gap-2 rounded-md bg-primary-soft px-3 py-2 text-[12px] text-muted"><ShieldCheck size={ 14 } />{ __( 'Protected by 256-bit encrypted checkout • 30-day guarantee', 'twinspot-lite' ) }</p>
 						</div>
 						<div className="rounded-xl bg-primary-soft p-4 text-[13px]">
 							<p className="flex items-center gap-2 font-semibold text-primary"><ScanSearch size={ 14 } />{ __( 'Twinspot Store Engine Audit', 'twinspot-lite' ) }</p>
@@ -211,14 +208,12 @@ export function Settings( { saved, onSave }: { saved: SettingsData; onSave: ( s:
 			<div className="flex flex-wrap items-end justify-between gap-2">
 				<div>
 					<h2 className="text-[20px] font-semibold">{ __( 'Plugin Configuration', 'twinspot-lite' ) }</h2>
-					<p className="text-muted">WooCommerce &gt; Twinspot &gt; { __( 'Settings', 'twinspot-lite' ) }</p>
 				</div>
 				<span className="flex items-center gap-1.5 font-medium text-primary"><CheckCircle2 size={ 16 } />{ draft.enabled || draft.hold ? __( 'Policy Engine: Active', 'twinspot-lite' ) : __( 'Policy Engine: Paused', 'twinspot-lite' ) }</span>
 			</div>
 			<Card className="p-6">
 				<div className="flex flex-wrap items-start justify-between gap-2">
 					<h2 className="text-[16px] font-semibold">{ __( 'Coupon Protection Rules', 'twinspot-lite' ) }</h2>
-					<Badge tone="quiet">{ __( 'Standard WooCommerce Storefront', 'twinspot-lite' ) }</Badge>
 				</div>
 				<p className="text-muted">{ __( 'Applies to coupons marked “New customers only (Twinspot)”, on both classic and block checkout.', 'twinspot-lite' ) }</p>
 				<div className="mt-5 space-y-4">
@@ -228,9 +223,6 @@ export function Settings( { saved, onSave }: { saved: SettingsData; onSave: ( s:
 					</Row>
 					<Row icon={ <PauseCircle size={ 18 } /> } title={ __( 'Hold suspicious orders for review', 'twinspot-lite' ) } control={ <Toggle on={ draft.hold } onChange={ setHold } label={ __( 'Hold suspicious orders for review', 'twinspot-lite' ) } /> }>
 						<p>{ __( 'Let checkout proceed with the discount, but set the order to “On hold” for you to review. Turns off blocking.', 'twinspot-lite' ) }</p>
-					</Row>
-					<Row icon={ <CloudCog size={ 18 } /> } title={ __( 'Optional cloud cluster lookup', 'twinspot-lite' ) } badge={ <Badge>{ __( 'Coming soon', 'twinspot-lite' ) }</Badge> } control={ <Toggle on={ false } disabled label={ __( 'Optional cloud cluster lookup', 'twinspot-lite' ) } /> }>
-						<p>{ __( 'Compare anonymized hashes with known cross-store abuse networks. Not available yet: this plugin makes no external calls and nothing leaves your store.', 'twinspot-lite' ) }</p>
 					</Row>
 				</div>
 				<div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
