@@ -144,6 +144,9 @@ class OrderTracker implements Module {
 			return;
 		}
 		WC()->session->set( 'twinspot_lite_blocked_coupon', null );
+		if ( in_array( strtolower( (string) $b['code'] ), array_map( 'strtolower', $order->get_coupon_codes() ), true ) ) {
+			return; // The shopper changed details and the coupon went through in the end, so nothing was blocked for this order.
+		}
 		$ids = array_values( array_diff( (array) $b['ids'], array( $order->get_id() ) ) );
 		$order->add_order_note(
 			sprintf(
