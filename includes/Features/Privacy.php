@@ -96,7 +96,7 @@ class Privacy implements Module {
 	}
 
 	public function erase( $email ): array {
-		$rows = $this->rows_for_email( $email );
+		$rows   = $this->rows_for_email( $email );
 		$hashes = array();
 		$ids    = array();
 		foreach ( $rows as $row ) {

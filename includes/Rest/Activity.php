@@ -61,7 +61,12 @@ class Activity {
 
 	/** @return array{filename:string,csv:string} Up to 1000 events matching the filters. */
 	public function export( array $args ): array {
-		$res = $this->build( array( 'page' => 1, 'per_page' => 1000 ) + $args );
+		$res = $this->build(
+			array(
+				'page'     => 1,
+				'per_page' => 1000,
+			) + $args
+		);
 		$csv = Csv::row( array( 'Time (UTC)', 'Event', 'Coupon', 'Order', 'Linked orders', 'Matched on', 'Ring', 'Ring orders', 'Amount' ) );
 		foreach ( $res['events'] as $e ) {
 			$csv .= Csv::row(
@@ -125,12 +130,12 @@ class Activity {
 			'matched' => array_values( array_filter( explode( ',', $r['matched'] ) ) ),
 			'amount'  => $amount > 0 ? $this->money( $amount ) : '',
 			'ring'    => $ring,
-			'meta'    => json_decode( $r['meta'] ?: '{}', true ) ?: new \stdClass(),
+			'meta'    => json_decode( $r['meta'] ? $r['meta'] : '{}', true ) ? json_decode( $r['meta'], true ) : new \stdClass(),
 		);
 	}
 
 	private function order_ref( int $id ): array {
-		static $seen = array(); // Export repeats the same linked orders across many rows.
+		static $seen          = array(); // Export repeats the same linked orders across many rows.
 		return $seen[ $id ] ??= $this->load_order_ref( $id );
 	}
 

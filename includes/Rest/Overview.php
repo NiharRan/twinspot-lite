@@ -87,7 +87,7 @@ class Overview {
 				'links' => $links,
 			);
 		}
-		usort( $list, fn( $a, $b ) => count( $b['ids'] ) - count( $a['ids'] ) ?: $b['ids'][0] - $a['ids'][0] );
+		usort( $list, fn( $a, $b ) => array( count( $b['ids'] ), $b['ids'][0] ) <=> array( count( $a['ids'] ), $a['ids'][0] ) );
 
 		$total    = count( $list );
 		$per_page = $args['per_page'];
@@ -131,7 +131,7 @@ class Overview {
 					'url' => '',
 				);
 				$spent   += 49;
-				$last     = $last ?: time();
+				$last     = $last ? $last : time();
 				continue;
 			}
 			$order = wc_get_order( $id );
@@ -251,22 +251,22 @@ class Overview {
 		$blocks = $this->log->for_orders( $ring );
 		$state  = $this->log->ring_state( array_merge( ...array_map( fn( $r ) => array( $r['email_h'], $r['phone_h'], $r['addr_h'] ), $rows ) ) );
 		return array(
-			'key'        => $ring[0],
-			'cluster'    => 'R-' . ( $ring[0] % Edges::SAMPLE_BASE ),
-			'blocked'    => $state['blocked'],
-			'allowed'    => $state['allowed'],
-			'attempts'   => $blocks['count'],
-			'prevented'  => $blocks['amount'] > 0 ? $this->money( $blocks['amount'] ) : '',
-			'ids'        => $ring,
-			'size'       => count( $ring ),
-			'sample'     => $ring[0] >= Edges::SAMPLE_BASE,
-			'links'      => Rings::links( $rows ),
-			'personas'   => count( array_unique( array_filter( array_column( $rows, 'email_h' ) ) ) ),
-			'total'      => $this->money( $spent ),
-			'first'      => $first ? gmdate( 'c', $first ) : null,
-			'orders'     => $orders,
-			'hubs'       => $hubs,
-			'edges'      => $edges,
+			'key'       => $ring[0],
+			'cluster'   => 'R-' . ( $ring[0] % Edges::SAMPLE_BASE ),
+			'blocked'   => $state['blocked'],
+			'allowed'   => $state['allowed'],
+			'attempts'  => $blocks['count'],
+			'prevented' => $blocks['amount'] > 0 ? $this->money( $blocks['amount'] ) : '',
+			'ids'       => $ring,
+			'size'      => count( $ring ),
+			'sample'    => $ring[0] >= Edges::SAMPLE_BASE,
+			'links'     => Rings::links( $rows ),
+			'personas'  => count( array_unique( array_filter( array_column( $rows, 'email_h' ) ) ) ),
+			'total'     => $this->money( $spent ),
+			'first'     => $first ? gmdate( 'c', $first ) : null,
+			'orders'    => $orders,
+			'hubs'      => $hubs,
+			'edges'     => $edges,
 		);
 	}
 

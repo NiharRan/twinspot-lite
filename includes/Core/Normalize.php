@@ -16,7 +16,7 @@ class Normalize {
 			return '';
 		}
 		list( $local, $domain ) = explode( '@', $email, 2 );
-		$local = explode( '+', $local )[0];
+		$local                  = explode( '+', $local )[0];
 		if ( in_array( $domain, array( 'gmail.com', 'googlemail.com' ), true ) ) {
 			$local  = str_replace( '.', '', $local );
 			$domain = 'gmail.com';

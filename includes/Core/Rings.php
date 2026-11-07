@@ -28,7 +28,10 @@ class Rings {
 			if ( ! isset( $parent[ $x ] ) ) {
 				$parent[ $x ] = $x;
 			}
-			return $parent[ $x ] === $x ? $x : ( $parent[ $x ] = $find( $parent[ $x ] ) );
+			if ( $parent[ $x ] !== $x ) {
+				$parent[ $x ] = $find( $parent[ $x ] );
+			}
+			return $parent[ $x ];
 		};
 		foreach ( $rows as $r ) {
 			$o = 'o' . $r['order_id'];

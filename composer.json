@@ -7,11 +7,15 @@
     "phpstan/phpstan": "^2.0",
     "phpstan/extension-installer": "^1.4",
     "szepeviktor/phpstan-wordpress": "^2.0",
-    "php-stubs/woocommerce-stubs": "^10.0"
+    "php-stubs/woocommerce-stubs": "^10.0",
+    "wp-coding-standards/wpcs": "^3.4",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
+    "phpcompatibility/phpcompatibility-wp": "^2.1"
   },
   "config": {
     "allow-plugins": {
-      "phpstan/extension-installer": true
+      "phpstan/extension-installer": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true
     }
   },
   "scripts": {

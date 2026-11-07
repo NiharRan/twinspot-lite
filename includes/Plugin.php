@@ -51,10 +51,10 @@ class Plugin {
 	 * @return Module[]
 	 */
 	private function modules(): array {
-		$edges   = new Edges();
-		$prints  = new Fingerprinter();
-		$log     = new BlockLog();
-		$events  = new Events();
+		$edges  = new Edges();
+		$prints = new Fingerprinter();
+		$log    = new BlockLog();
+		$events = new Events();
 		$edges->maybe_install(); // Sites updated from an older version get new tables and columns here.
 		$events->maybe_install();
 		$tracker = new OrderTracker( $edges, $prints, $log, $events );

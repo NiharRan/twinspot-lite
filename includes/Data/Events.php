@@ -104,7 +104,10 @@ class Events {
 		$where = $this->where( $a ); // Already prepared.
 		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table()} WHERE $where" ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where is prepared in where().
 		$rows  = $wpdb->get_results( "SELECT * FROM {$this->table()} WHERE $where ORDER BY id DESC LIMIT " . (int) $a['per_page'] . ' OFFSET ' . (int) ( ( $a['page'] - 1 ) * $a['per_page'] ), ARRAY_A ); // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $where is prepared in where(); limits are cast to int.
-		return array( 'rows' => $rows, 'total' => $total );
+		return array(
+			'rows'  => $rows,
+			'total' => $total,
+		);
 	}
 
 	/** @return array{counts:array<string,int>,blocked_amount:float,coupons:int} Totals per event type since a time. */

@@ -45,8 +45,8 @@ class CouponGuard implements Module {
 		if ( ! $post ) {
 			return;
 		}
-		$c  = new \WC_Coupon( $post->ID );
-		$on = 'yes' === $c->get_meta( self::META );
+		$c     = new \WC_Coupon( $post->ID );
+		$on    = 'yes' === $c->get_meta( self::META );
 		$chips = array( __( 'Normalized addresses', 'twinspot-lite' ), __( 'Alias detection (+tag)', 'twinspot-lite' ), __( 'Phone hashing', 'twinspot-lite' ) );
 		echo '<div class="options_group"><div style="overflow:hidden;margin:12px;padding:12px 14px;border:1px solid #c3dcd8;border-radius:10px;background:#f0f7f6">';
 		echo '<label style="float:none;width:auto;margin:0;padding:0;font-weight:600"><input type="checkbox" style="float:none;margin:0 6px 0 0" name="' . esc_attr( self::META ) . '" value="yes" ' . checked( $on, true, false ) . ' /> ' . esc_html__( 'New customers only (Twinspot)', 'twinspot-lite' ) . '</label> ';
@@ -90,7 +90,13 @@ class CouponGuard implements Module {
 		if ( ( $blocked || $ids ) && apply_filters( 'twinspot_lite_refuse_coupon', true, $ids, $coupon ) ) {
 			$fixed = in_array( $coupon->get_discount_type(), array( 'fixed_cart', 'fixed_product' ), true );
 			if ( WC()->session ) {
-				WC()->session->set( 'twinspot_lite_blocked_coupon', array( 'code' => $coupon->get_code(), 'ids' => array_map( 'intval', $ids ) ) ); // Read by OrderTracker to note the order.
+				WC()->session->set(
+					'twinspot_lite_blocked_coupon',
+					array(
+						'code' => $coupon->get_code(),
+						'ids'  => array_map( 'intval', $ids ),
+					)
+				); // Read by OrderTracker to note the order.
 			}
 			$amount = $fixed ? (float) $coupon->get_amount() : 0.0;
 			$this->log->add( $ids, $amount );

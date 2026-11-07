@@ -10,9 +10,9 @@ namespace Twinspot_Lite\Data;
 defined( 'ABSPATH' ) || exit;
 
 class BlockLog {
-	const OPTION = 'twinspot_lite_blocked';
-	const EVENTS = 'twinspot_lite_block_events';
-	const RINGS  = 'twinspot_lite_blocked_rings';
+	const OPTION  = 'twinspot_lite_blocked';
+	const EVENTS  = 'twinspot_lite_block_events';
+	const RINGS   = 'twinspot_lite_blocked_rings';
 	const ALLOWED = 'twinspot_lite_allowed_rings';
 
 	/**
@@ -21,7 +21,10 @@ class BlockLog {
 	 */
 	public function add( array $order_ids = array(), float $amount = 0.0 ): void {
 		$events   = (array) get_option( self::EVENTS, array() );
-		$events[] = array( 'ids' => $order_ids, 'amount' => $amount );
+		$events[] = array(
+			'ids'    => $order_ids,
+			'amount' => $amount,
+		);
 		update_option( self::EVENTS, array_slice( $events, -200 ), false );
 		$log         = (array) get_option( self::OPTION, array() );
 		$day         = gmdate( 'Y-m-d' );
@@ -44,7 +47,10 @@ class BlockLog {
 				$amount += $e['amount'];
 			}
 		}
-		return array( 'count' => $count, 'amount' => $amount );
+		return array(
+			'count'  => $count,
+			'amount' => $amount,
+		);
 	}
 
 	public function set_ring_blocked( int $key, array $hashes, bool $on ): void {
@@ -68,7 +74,7 @@ class BlockLog {
 
 	/** Saves and returns the list minus every ring that shares a hash with $hashes. */
 	private function without( string $option, array $hashes ): array {
-		$rings = array_filter( (array) get_option( $option, array() ), fn( $list ) => ! array_intersect( $list, $hashes ) );
+		$rings = array_filter( (array) get_option( $option, array() ), fn( $ring ) => ! array_intersect( $ring, $hashes ) );
 		update_option( $option, $rings, false );
 		return $rings;
 	}

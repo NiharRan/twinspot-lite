@@ -168,7 +168,13 @@ class OrderTracker implements Module {
 	}
 
 	private function ring_link( int $order_id, int $orders ): string {
-		$url = add_query_arg( array( 'page' => 'twinspot-lite', 'ring' => $order_id ), admin_url( 'admin.php' ) );
+		$url  = add_query_arg(
+			array(
+				'page' => 'twinspot-lite',
+				'ring' => $order_id,
+			),
+			admin_url( 'admin.php' )
+		);
 		$chip = 'background:#e7eeff;border-radius:6px;padding:1px 8px;font-size:11px';
 		/* translators: %d: number of orders in the ring */
 		$count = _n( '%d order', '%d orders', $orders, 'twinspot-lite' );

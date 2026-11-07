@@ -198,9 +198,9 @@ class Routes implements Module {
 
 	private function activity_args(): array {
 		$text = array(
-			'type'     => 'string',
-			'default'  => '',
-			'enum'     => array( '', 'blocked', 'clean', 'ring', 'held', 'system' ),
+			'type'    => 'string',
+			'default' => '',
+			'enum'    => array( '', 'blocked', 'clean', 'ring', 'held', 'system' ),
 		);
 		return array(
 			'range'    => array(
