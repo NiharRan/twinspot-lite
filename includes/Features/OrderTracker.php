@@ -45,14 +45,19 @@ class OrderTracker implements Module {
 			10,
 			2
 		);
-		// A shop manager leaving on-hold releases the order; gateway or webhook changes (no logged-in user) keep the flag, so a late payment_complete still holds it.
+		// A shop manager leaving on-hold releases the order. Any other actor (gateway, webhook, cron) keeps the flag, and a direct move to processing or completed is put back on hold.
 		add_action(
 			'woocommerce_order_status_changed',
 			function ( $order_id, $from, $to ) {
-				$order = 'on-hold' === $from && 'on-hold' !== $to && current_user_can( 'edit_shop_orders' ) ? wc_get_order( $order_id ) : null;
-				if ( $order && $order->get_meta( '_twinspot_lite_held' ) ) {
+				$order = 'on-hold' === $from && 'on-hold' !== $to ? wc_get_order( $order_id ) : null;
+				if ( ! $order || ! $order->get_meta( '_twinspot_lite_held' ) ) {
+					return;
+				}
+				if ( current_user_can( 'edit_shop_orders' ) ) {
 					$order->delete_meta_data( '_twinspot_lite_held' );
 					$order->save();
+				} elseif ( in_array( $to, array( 'processing', 'completed' ), true ) ) {
+					$order->update_status( 'on-hold', __( 'Twinspot: returned to on-hold, a held order cannot be released automatically.', 'twinspot-lite' ) );
 				}
 			},
 			10,
