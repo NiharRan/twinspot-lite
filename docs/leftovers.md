@@ -2,20 +2,20 @@
 
 Things known to be unfinished, untested or deliberately left out. Remove an item when it is done.
 
-## Untested in WooCommerce
+## Untested
 
-Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php -l` and `php tests/core-test.php`).
+Tested so far: `php tests/core-test.php`, `tests/wc-test.php` (WP-CLI, real WooCommerce), and by hand in a browser on classic and block checkout (block mode refusal, hold mode, gateway revert to on-hold, new shopper unaffected). Only COD was tried as a gateway.
 
-- Hold mode (`OrderTracker::created()`): confirm the order lands in `on-hold` with the note on both classic and block checkout, and that a paid gateway's `payment_complete()` does not move it back to processing (filter on `woocommerce_payment_complete_order_status`).
-- Settings screen: save, discard, and the block/hold exclusivity in a browser.
-- Block checkout: verify billing details exist when the coupon is validated. The check fails open if they do not.
-- Classic and block checkout both need a manual pass before release.
+- Settings screen and the other React screens: save, discard, and the block/hold exclusivity in a browser.
+- Other plugins: Subscriptions, coupon plugins (Advanced Coupons, Smart Coupons), Stripe and PayPal, caching plugins.
+- Block checkout: only the billing email was confirmed at coupon validation. Phone and address were not checked.
+- Stale "Coupon Blocked" order note: if a shopper is refused, changes their details and checks out without the coupon, the order still gets the note (a session value). Fixed only for the case where the coupon was applied in the end.
 
 ## WordPress.org submission (from CLAUDE.md)
 
 1. Confirm `Contributors` in `readme.txt` is the real WordPress.org username, and `Tested up to` is the current WordPress major version.
 2. Add `.wordpress-org/` assets: `banner-772x250.png`, `banner-1544x500.png`, `icon-128x128.png`, `icon-256x256.png`, screenshots, then a Screenshots section in the readme.
-3. Run Plugin Check and PHPCS (WordPress standards) in a local WooCommerce site (Herd).
+3. Done: Plugin Check on the built zip and PHPCS report no errors.
 
 ## Scale limits
 
@@ -39,7 +39,7 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 - Block and hold are mutually exclusive. If merchants want both (block known rings, hold the rest), the settings model needs a third state.
 - Hold only applies to coupons with "New customers only (Twinspot)" ticked. Orders without such a coupon are never held.
 - Admin-blocked rings refuse every coupon in both block and hold mode. Only the shield being fully off (both toggles off) disables them.
-- A gateway that calls `update_status('processing')` directly is reverted to on-hold (non-admin move to processing or completed on a `_twinspot_lite_held` order). Untested in WooCommerce. Cancelled, failed and refunded moves are allowed. Auto-complete plugins are reverted too; integrators can opt out with the `twinspot_lite_keep_held` filter.
+- A gateway that calls `update_status('processing')` directly is reverted to on-hold (non-admin move to processing or completed on a `_twinspot_lite_held` order). Verified in a browser with COD (gateway completes it, the plugin puts it back on hold). Cancelled, failed and refunded moves are allowed. Auto-complete plugins are reverted too; integrators can opt out with the `twinspot_lite_keep_held` filter.
 - Hold checks matches at order creation only, not when an order later reaches processing or completed.
 - A held order is released when a user with `edit_shop_orders` changes its status away from on-hold; this clears `_twinspot_lite_held`, so later payment webhooks do not hold it again.
 

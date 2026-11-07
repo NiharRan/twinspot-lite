@@ -24,8 +24,8 @@ Run `npm ci && npm run build` (type check: `npm run typecheck`) before testing t
 Still open before submitting:
 1. Confirm `Contributors` in `readme.txt` is the real WordPress.org username and `Tested up to` is the current WordPress major version.
 2. Add `.wordpress-org/` assets: `banner-772x250.png`, `banner-1544x500.png`, `icon-128x128.png`, `icon-256x256.png`, screenshots (then add a Screenshots section to the readme).
-3. Run the Plugin Check plugin and PHPCS (WordPress standards) in a local WooCommerce site; nothing has been run in WooCommerce yet.
-4. Verify block checkout provides billing details at coupon validation (the check fails open if not).
+3. Done: Plugin Check (on the built zip) and PHPCS (`vendor/bin/phpcs`) are clean. Integration test `tests/wc-test.php` (WP-CLI, see below) passes, and block and classic checkout were tested by hand in a browser for block mode, hold mode and the gateway revert. Still untested: Settings screen and other React screens in a browser, and other plugins (Subscriptions, coupon plugins, Stripe/PayPal, caching).
+4. Block checkout provides billing email at coupon validation: verified. Phone and address were not checked there.
 5. Import handles 1000 orders per request and the rings page loads all rows (fine to about 50k orders).
 
 ## Design decisions to keep
@@ -50,4 +50,4 @@ Still open before submitting:
 
 - Smallest change that fully works. No new dependencies without a reason.
 - Keep pure logic in `includes/Core/` with a test in `tests/core-test.php`; run `php tests/core-test.php` after changing it.
-- Before release: run `php -l` on every file, the official Plugin Check plugin and WordPress coding standards (PHPCS) in a local WooCommerce site (Herd), and test both classic and block checkout.
+- Before release: run `php -l` on every file, `vendor/bin/phpcs`, `vendor/bin/phpstan analyse`, Plugin Check on the built zip, and `wp eval-file wp-content/plugins/twinspot-lite/tests/wc-test.php` on a dev WooCommerce site (needs WP-CLI; it creates and removes its own products, coupons and orders). Re-test classic and block checkout by hand if checkout code changed.
