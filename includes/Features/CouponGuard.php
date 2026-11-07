@@ -42,6 +42,9 @@ class CouponGuard implements Module {
 
 	public function render_field(): void {
 		global $post;
+		if ( ! $post ) {
+			return;
+		}
 		$c  = new \WC_Coupon( $post->ID );
 		$on = 'yes' === $c->get_meta( self::META );
 		$chips = array( __( 'Normalized addresses', 'twinspot-lite' ), __( 'Alias detection (+tag)', 'twinspot-lite' ), __( 'Phone hashing', 'twinspot-lite' ) );

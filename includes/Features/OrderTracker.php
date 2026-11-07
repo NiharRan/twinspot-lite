@@ -40,7 +40,7 @@ class OrderTracker implements Module {
 			'woocommerce_payment_complete_order_status',
 			function ( $status, $order_id ) {
 				$order = wc_get_order( $order_id );
-				return $order && $order->get_meta( '_twinspot_lite_held' ) ? 'on-hold' : $status;
+				return $order && $order->get_meta( '_twinspot_lite_held' ) && apply_filters( 'twinspot_lite_keep_held', true, $order, $status ) ? 'on-hold' : $status;
 			},
 			10,
 			2
@@ -56,7 +56,7 @@ class OrderTracker implements Module {
 				if ( current_user_can( 'edit_shop_orders' ) ) {
 					$order->delete_meta_data( '_twinspot_lite_held' );
 					$order->save();
-				} elseif ( in_array( $to, array( 'processing', 'completed' ), true ) ) {
+				} elseif ( in_array( $to, array( 'processing', 'completed' ), true ) && apply_filters( 'twinspot_lite_keep_held', true, $order, $to ) ) {
 					$order->update_status( 'on-hold', __( 'Twinspot: returned to on-hold, a held order cannot be released automatically.', 'twinspot-lite' ) );
 				}
 			},
@@ -79,6 +79,14 @@ class OrderTracker implements Module {
 
 	/** New checkout order: index it, log each coupon decision, and hold the order if hold mode is on and a "new customers only" coupon was used by a repeat shopper. */
 	public function created( $order ): void {
+		try {
+			$this->hold_or_log( $order );
+		} catch ( \Throwable $e ) {
+			return; // Fail open: never break a checkout.
+		}
+	}
+
+	private function hold_or_log( $order ): void {
 		$this->record( $order );
 		$this->note_blocked_coupon( $order );
 		if ( ! $order instanceof \WC_Order || ! $order->get_coupon_codes() ) {

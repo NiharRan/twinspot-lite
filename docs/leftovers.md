@@ -39,7 +39,7 @@ Nothing has been run in a real WooCommerce site yet (only typecheck, build, `php
 - Block and hold are mutually exclusive. If merchants want both (block known rings, hold the rest), the settings model needs a third state.
 - Hold only applies to coupons with "New customers only (Twinspot)" ticked. Orders without such a coupon are never held.
 - Admin-blocked rings refuse every coupon in both block and hold mode. Only the shield being fully off (both toggles off) disables them.
-- A gateway that calls `update_status('processing')` directly is reverted to on-hold (non-admin move to processing or completed on a `_twinspot_lite_held` order). Untested in WooCommerce. Cancelled, failed and refunded moves are allowed.
+- A gateway that calls `update_status('processing')` directly is reverted to on-hold (non-admin move to processing or completed on a `_twinspot_lite_held` order). Untested in WooCommerce. Cancelled, failed and refunded moves are allowed. Auto-complete plugins are reverted too; integrators can opt out with the `twinspot_lite_keep_held` filter.
 - Hold checks matches at order creation only, not when an order later reaches processing or completed.
 - A held order is released when a user with `edit_shop_orders` changes its status away from on-hold; this clears `_twinspot_lite_held`, so later payment webhooks do not hold it again.
 

@@ -58,6 +58,7 @@ Yes. Filters:
 * `twinspot_lite_refuse_coupon` ( $refuse, $order_ids, $coupon ): return false to let a repeat shopper's coupon through.
 * `twinspot_lite_refusal_message` ( $message, $coupon ): change the checkout error text.
 * `twinspot_lite_hold_order` ( $hold, $order, $order_ids ): return false to skip holding an order.
+* `twinspot_lite_keep_held` ( $keep, $order, $new_status ): return false to let another plugin (an auto-complete or fulfilment tool) move a held order out of on-hold.
 * `twinspot_lite_track_order` ( $track, $order ): return false to keep an order out of the index.
 * `twinspot_lite_modules` ( $modules ): add or remove plugin modules.
 
