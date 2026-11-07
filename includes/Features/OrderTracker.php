@@ -82,7 +82,14 @@ class OrderTracker implements Module {
 		try {
 			$this->hold_or_log( $order );
 		} catch ( \Throwable $e ) {
-			return; // Fail open: never break a checkout.
+			// Fail open so checkout never breaks, but leave a trace so a skipped hold is visible to the merchant.
+			if ( $order instanceof \WC_Order ) {
+				try {
+					$order->add_order_note( __( 'Twinspot: the repeat-shopper check failed for this order. Review it manually.', 'twinspot-lite' ) );
+				} catch ( \Throwable $e2 ) {
+					return;
+				}
+			}
 		}
 	}
 
