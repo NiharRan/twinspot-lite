@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { applyFilters } from '@wordpress/hooks';
 import { __, _n, sprintf } from '@wordpress/i18n';
-import { ArrowLeft, AtSign, Ban, BadgeCheck, Download, ExternalLink, Home, Info, Lock, Phone, Shield, X } from 'lucide-react';
+import { ArrowLeft, AtSign, Ban, BadgeCheck, Download, ExternalLink, Home, Info, Lock, Network, Phone, Shield, X } from 'lucide-react';
 import { blockRing, getRing } from '../lib/api';
 import { Spinner } from '../components/ui/spinner';
 import type { ReactElement } from 'react';
