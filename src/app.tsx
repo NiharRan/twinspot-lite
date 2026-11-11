@@ -3,7 +3,7 @@ import { __ } from '@wordpress/i18n';
 import { MotionConfig, motion } from 'motion/react';
 import { getOverview, getSettings, importBatch, saveSettings, setSample, type SettingsData } from './lib/api';
 import { Spinner } from './components/ui/spinner';
-import { Header } from './components/header';
+import { Header, extraTabs } from './components/header';
 import { Accounts } from './screens/accounts';
 import { Activity } from './screens/activity';
 import { Overview } from './screens/overview';
@@ -14,11 +14,12 @@ import type { Filters, Overview as OverviewData, Tab } from './types';
 const RingDetail = lazy( () => import( './screens/ring-detail' ).then( ( m ) => ( { default: m.RingDetail } ) ) ); // Keeps the graph library out of the main bundle.
 const KEY = 'twinspot_lite_view';
 const TABS: Tab[] = [ 'overview', 'accounts', 'rules', 'activity', 'settings' ];
+const known = ( id: Tab ) => TABS.includes( id ) || extraTabs().some( ( t ) => t.id === id ); // Saved ids from a deactivated add-on fall back to overview.
 
 function savedView(): { tab: Tab; ring: number | null } {
 	try {
 		const v = JSON.parse( window.localStorage.getItem( KEY ) || '{}' );
-		return { tab: TABS.includes( v.tab ) ? v.tab : 'overview', ring: Number( v.ring ) || null };
+		return { tab: known( v.tab ) ? v.tab : 'overview', ring: Number( v.ring ) || null };
 	} catch {
 		return { tab: 'overview', ring: null };
 	}
@@ -112,6 +113,7 @@ export function App() {
 		setImporting( false );
 	};
 
+	const extra = extraTabs().find( ( t ) => t.id === tab );
 	return (
 		<MotionConfig reducedMotion="user">
 			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } />
@@ -137,6 +139,7 @@ export function App() {
 			{ ringKey === null && tab === 'accounts' && <Accounts onOpen={ setRingKey } data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
 			{ ringKey === null && tab === 'rules' && <Rules data={ data } enabled={ enabled } /> }
 			{ ringKey === null && tab === 'activity' && <Activity onOpen={ setRingKey } /> }
+			{ ringKey === null && extra && extra.render() }
 			{ ringKey === null && tab === 'settings' && <Settings saved={ settings } onSave={ save } /> }
 			</motion.div>
 		</MotionConfig>

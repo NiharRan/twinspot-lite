@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 export type LinkType = 'email' | 'phone' | 'address';
 
 export interface Ring {
@@ -36,7 +37,8 @@ export interface Filters {
 	page: number;
 }
 
-export type Tab = 'overview' | 'accounts' | 'rules' | 'activity' | 'settings';
+export type Tab = string; // Built-in ids plus any added by add-ons through the `twinspotLite.tabs` filter.
+export type ExtraTab = { id: string; label: string; render: () => ReactElement };
 
 export interface RingOrder {
 	id: number;

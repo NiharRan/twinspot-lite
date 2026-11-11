@@ -1,6 +1,7 @@
+import { applyFilters } from '@wordpress/hooks';
 import { __ } from '@wordpress/i18n';
 import { cn } from '../lib/utils';
-import type { Tab } from '../types';
+import type { ExtraTab, Tab } from '../types';
 
 const TABS: [ Tab, string ][] = [
 	[ 'overview', __( 'Overview', 'twinspot-lite' ) ],
@@ -10,11 +11,17 @@ const TABS: [ Tab, string ][] = [
 	[ 'settings', __( 'Plugin Settings', 'twinspot-lite' ) ],
 ];
 
+/** Add-on tabs from the `twinspotLite.tabs` filter, read at render time; ids that clash with built-in tabs are ignored. */
+export function extraTabs(): ExtraTab[] {
+	const extras = applyFilters( 'twinspotLite.tabs', [] ) as ExtraTab[];
+	return extras.filter( ( t, i ) => ! TABS.some( ( [ id ] ) => id === t.id ) && extras.findIndex( ( e ) => e.id === t.id ) === i );
+}
+
 export function Header( { tab, setTab, enabled }: { tab: Tab; setTab: ( t: Tab ) => void; enabled: boolean } ) {
 	return (
 		<div className="-mx-5 mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-5">
 			<nav className="flex flex-wrap gap-6" aria-label={ __( 'Twinspot sections', 'twinspot-lite' ) }>
-				{ TABS.map( ( [ id, label ] ) => (
+				{ [ ...TABS, ...extraTabs().map( ( t ): [ Tab, string ] => [ t.id, t.label ] ) ].map( ( [ id, label ] ) => (
 					<button
 						key={ id }
 						type="button"

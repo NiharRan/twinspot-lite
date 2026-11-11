@@ -37,7 +37,7 @@ class Page implements Module {
 		}
 		$asset = require $asset_file;
 		$url   = plugins_url( 'build/', $this->dir . 'twinspot-lite.php' );
-		wp_enqueue_script( 'twinspot-lite-admin', $url . 'index.js', $asset['dependencies'], $asset['version'], true );
+		wp_enqueue_script( 'twinspot-lite-admin', $url . 'index.js', apply_filters( 'twinspot_lite_admin_script_deps', $asset['dependencies'] ), $asset['version'], true );
 		wp_enqueue_style( 'twinspot-lite-admin', $url . 'style-index.css', array(), $asset['version'] );
 		wp_set_script_translations( 'twinspot-lite-admin', 'twinspot-lite' );
 	}

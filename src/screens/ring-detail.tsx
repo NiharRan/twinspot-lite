@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from '@wordpress/element';
+import { applyFilters } from '@wordpress/hooks';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { ArrowLeft, AtSign, Ban, BadgeCheck, Download, ExternalLink, Home, Info, Lock, Phone, Shield, X } from 'lucide-react';
 import { blockRing, getRing } from '../lib/api';
 import { Spinner } from '../components/ui/spinner';
+import type { ReactElement } from 'react';
 import type { LinkType, RingDetail as Ring } from '../types';
 import { ConnectionMap } from './connection-map';
 
@@ -175,6 +177,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 					</div>
 				</div>
 			</div>
+			{ ( applyFilters( 'twinspotLite.ringWidgets', [] ) as Array< ( ctx: { orderId: number } ) => ReactElement > ).map( ( Widget, i ) => <Widget key={ i } orderId={ orderId } /> ) }
 		</div>
 	);
 }
