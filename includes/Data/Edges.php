@@ -130,7 +130,7 @@ class Edges {
 					continue;
 				}
 				$in    = implode( ',', array_fill( 0, count( $hashes ), '%s' ) );
-				$found = $wpdb->get_col( $wpdb->prepare( "SELECT order_id FROM %i WHERE order_id < %d AND %i IN ($in) LIMIT %d", array_merge( array( $this->table(), self::SAMPLE_BASE, $col ), $hashes, array( $limit ) ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+				$found = (array) $wpdb->get_col( $wpdb->prepare( "SELECT order_id FROM %i WHERE order_id < %d AND %i IN ($in) LIMIT %d", array_merge( array( $this->table(), self::SAMPLE_BASE, $col ), $hashes, array( $limit ) ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
 				foreach ( $found as $id ) {
 					$id = (int) $id;
 					if ( ! isset( $seen[ $id ] ) && count( $seen ) < $limit ) {
