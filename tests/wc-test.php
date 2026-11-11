@@ -206,6 +206,21 @@ ts_check( array( $rd->get_id() ) === \Twinspot_Lite\Api::ring_orders_for_details
 ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_order( $rd->get_id() ), 'Api: lone order has no ring (order)' );
 ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_details( '', '', '', '' ), 'Api: empty details match nothing' );
 ts_check( 2 === count( \Twinspot_Lite\Api::ring_orders_for_order( $ra->get_id(), 2 ) ), 'Api: limit caps the ring' );
+$got = \Twinspot_Lite\Api::component( array( $ra->get_id(), $rd->get_id() ) );
+$exp = array_merge( $want, array( $rd->get_id() ) );
+sort( $got );
+sort( $exp );
+ts_check( $exp === $got, 'Api: component merges rings of several seeds, lone seed kept' );
+ts_check( array() === \Twinspot_Lite\Api::component( array() ), 'Api: component of nothing is empty' );
+$rows = \Twinspot_Lite\Api::edge_rows( array( $ra->get_id(), 1999999999 ) );
+ts_check( array( $ra->get_id() ) === array_keys( $rows ) && array( 'email_h', 'phone_h', 'addr_h' ) === array_keys( $rows[ $ra->get_id() ] ), 'Api: edge_rows returns the three hashes, skips unknown orders' );
+add_filter( 'twinspot_lite_ring_detail', function ( $d ) {
+	$d['hubs'][] = array( 'id' => 'x1', 'type' => 'device', 'label' => 'Same device', 'count' => 2, 'top' => false );
+	return $d;
+} );
+$detail = ( new \Twinspot_Lite\Rest\Overview( $edges, new Fingerprinter(), new BlockLog(), new \Twinspot_Lite\Data\Events() ) )->detail( $ra->get_id() );
+ts_check( $detail && 'x1' === end( $detail['hubs'] )['id'], 'Api: ring detail filter can append hubs' );
+remove_all_filters( 'twinspot_lite_ring_detail' );
 ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_order( 1999999999 ), 'Api: unknown order has no ring' );
 ts_check( ! \Twinspot_Lite\Api::is_ring_allowed_for_order( $ra->get_id() ) && ! \Twinspot_Lite\Api::is_ring_allowed_for_details( 'rc@example.org', '555-300-9999', '7 Ring Rd', '30003' ), 'Api: ring not allowed by default' );
 $rh = array();

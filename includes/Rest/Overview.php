@@ -250,7 +250,7 @@ class Overview {
 
 		$blocks = $this->log->for_orders( $ring );
 		$state  = $this->log->ring_state( array_merge( ...array_map( fn( $r ) => array( $r['email_h'], $r['phone_h'], $r['addr_h'] ), $rows ) ) );
-		return array(
+		$detail = array(
 			'key'       => $ring[0],
 			'cluster'   => 'R-' . ( $ring[0] % Edges::SAMPLE_BASE ),
 			'blocked'   => $state['blocked'],
@@ -268,6 +268,14 @@ class Overview {
 			'hubs'      => $hubs,
 			'edges'     => $edges,
 		);
+		/**
+		 * Lets add-ons append hubs, edges and orders to a ring's detail.
+		 *
+		 * @param array $detail   Ring detail as returned by the REST route.
+		 * @param int   $order_id Order the detail was requested for.
+		 */
+		$filtered = apply_filters( 'twinspot_lite_ring_detail', $detail, $order_id );
+		return is_array( $filtered ) ? $filtered : $detail;
 	}
 
 	/** Block or unblock a whole ring from coupons. Returns the new state. */

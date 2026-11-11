@@ -38,6 +38,39 @@ class Api {
 		return $edges->row( $order_id ) && count( $ids ) > 1 ? $ids : array();
 	}
 
+	/**
+	 * Lite's ring for several seed orders at once (multi-hop). Seeds are always included.
+	 *
+	 * @param int[] $order_ids Seed order ids.
+	 * @return int[] Sorted order ids.
+	 */
+	public static function component( array $order_ids, int $limit = 200 ): array {
+		$order_ids = array_values( array_filter( array_map( 'intval', $order_ids ) ) );
+		return $order_ids ? ( new Edges() )->component( $order_ids, $limit ) : array();
+	}
+
+	/**
+	 * Stored hashes per order, without the IP hash: [ order_id => [ email_h, phone_h, addr_h ] ]. Unknown orders are omitted.
+	 *
+	 * @param int[] $order_ids Order ids.
+	 * @return array<int, array<string, string>>
+	 */
+	public static function edge_rows( array $order_ids ): array {
+		$edges = new Edges();
+		$out   = array();
+		foreach ( array_unique( array_filter( array_map( 'intval', $order_ids ) ) ) as $id ) {
+			$row = $edges->row( $id );
+			if ( $row ) {
+				$out[ $id ] = array(
+					'email_h' => (string) $row['email_h'],
+					'phone_h' => (string) $row['phone_h'],
+					'addr_h'  => (string) $row['addr_h'],
+				);
+			}
+		}
+		return $out;
+	}
+
 	public static function is_ring_allowed_for_details( string $email, string $phone, string $line1, string $postcode ): bool {
 		return ( new BlockLog() )->is_allowed( ( new Fingerprinter() )->hashes( $email, $phone, $line1, $postcode ) );
 	}

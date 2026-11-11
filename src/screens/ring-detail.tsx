@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { applyFilters } from '@wordpress/hooks';
 import { __, _n, sprintf } from '@wordpress/i18n';
-import { ArrowLeft, AtSign, Ban, BadgeCheck, Download, ExternalLink, Home, Info, Lock, Phone, Shield, X } from 'lucide-react';
+import { ArrowLeft, AtSign, Ban, BadgeCheck, Download, ExternalLink, Home, Info, Lock, Network, Phone, Shield, X } from 'lucide-react';
 import { blockRing, getRing } from '../lib/api';
 import { Spinner } from '../components/ui/spinner';
 import type { ReactElement } from 'react';
@@ -132,7 +132,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 						</div>
 						<div className="flex flex-col gap-2">
 							{ ring.hubs.map( ( h ) => {
-								const p = PATTERN[ h.type ];
+								const p = PATTERN[ h.type as LinkType ] ?? { icon: Network, title: h.label ?? h.type, text: __( 'Shared by these orders.', 'twinspot-lite' ), icon_bg: 'bg-primary-tint text-primary', count: 'text-muted' };
 								return (
 									<div key={ h.id } className="flex items-start gap-2 rounded-lg bg-info p-2">
 										<span className={ `mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${ p.icon_bg }` }><p.icon size={ 16 } /></span>
