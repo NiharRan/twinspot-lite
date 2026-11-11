@@ -15,9 +15,11 @@ defined( 'ABSPATH' ) || exit;
 
 class Api {
 	/**
-	 * Ids of every order in the ring the checkout details match (multi-hop).
+	 * Ids of the earlier orders in the ring the checkout details match (multi-hop).
+	 * A single match returns that one id (the shopper plus it forms a ring, as the new order is not indexed yet).
+	 * Unlike ring_orders_for_order(), which returns [] for an order with no other linked orders.
 	 *
-	 * @return int[] Empty when nothing matches or details are missing.
+	 * @return int[] Empty only when nothing matches or details are missing.
 	 */
 	public static function ring_orders_for_details( string $email, string $phone, string $line1, string $postcode, int $limit = 200 ): array {
 		$edges = new Edges();

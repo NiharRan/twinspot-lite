@@ -202,6 +202,7 @@ $got = \Twinspot_Lite\Api::ring_orders_for_details( 'rc@example.org', '555-300-9
 sort( $got );
 ts_check( $want === $got, 'Api: ring_orders_for_details matches the same ring' );
 ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_details( 'nobody@example.com', '555-000-1111', '1 Nowhere Ln', '00001' ), 'Api: lone order has no ring (details)' );
+ts_check( array( $rd->get_id() ) === \Twinspot_Lite\Api::ring_orders_for_details( 'rd@example.com', '555-777-8888', '88 Lone Ave', '88888' ), 'Api: details matching a single earlier order return just that id' );
 ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_order( $rd->get_id() ), 'Api: lone order has no ring (order)' );
 ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_details( '', '', '', '' ), 'Api: empty details match nothing' );
 ts_check( 2 === count( \Twinspot_Lite\Api::ring_orders_for_order( $ra->get_id(), 2 ) ), 'Api: limit caps the ring' );
