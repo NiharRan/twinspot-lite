@@ -52,7 +52,9 @@ export interface RingOrder {
 
 export interface RingHub {
 	id: string;
-	type: LinkType;
+	type: LinkType | string; // Add-ons may use other types; they render with a generic icon and `label`.
+	label?: string;
+	dashed?: boolean;
 	count: number;
 	top: boolean;
 }

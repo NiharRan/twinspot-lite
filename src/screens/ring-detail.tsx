@@ -132,7 +132,7 @@ export function RingDetail( { orderId, onBack }: { orderId: number; onBack: () =
 						</div>
 						<div className="flex flex-col gap-2">
 							{ ring.hubs.map( ( h ) => {
-								const p = PATTERN[ h.type ];
+								const p = PATTERN[ h.type as LinkType ] ?? { icon: Network, title: h.label ?? h.type, text: __( 'Shared by these orders.', 'twinspot-lite' ), icon_bg: 'bg-primary-tint text-primary', count: 'text-muted' };
 								return (
 									<div key={ h.id } className="flex items-start gap-2 rounded-lg bg-info p-2">
 										<span className={ `mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${ p.icon_bg }` }><p.icon size={ 16 } /></span>

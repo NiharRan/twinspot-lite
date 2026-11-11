@@ -5,8 +5,8 @@ import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, t
 import { AtSign, Home, Maximize, Minimize, Network, Phone, RefreshCw, ShoppingCart } from 'lucide-react';
 import type { LinkType, RingDetail } from '../types';
 
-const HUB_ICON: Record< LinkType, typeof AtSign > = { email: AtSign, phone: Phone, address: Home };
-const HUB_LABEL: Record< LinkType, string > = {
+const HUB_ICON: Record< string, typeof AtSign > = { email: AtSign, phone: Phone, address: Home };
+const HUB_LABEL: Record< string, string > = {
 	email: __( 'Same email', 'twinspot-lite' ),
 	phone: __( 'Same phone', 'twinspot-lite' ),
 	address: __( 'Same address', 'twinspot-lite' ),
@@ -25,15 +25,15 @@ function OrderNode( { data }: NodeProps< Node< { label: string } > > ) {
 	);
 }
 
-function HubNode( { data }: NodeProps< Node< { type: LinkType; count: number; top: boolean } > > ) {
-	const Icon = HUB_ICON[ data.type ];
+function HubNode( { data }: NodeProps< Node< { type: string; label?: string; count: number; top: boolean } > > ) {
+	const Icon = HUB_ICON[ data.type ] ?? Network;
 	return (
 		<div className="flex flex-col items-center gap-1">
 			<Handle type="target" position={ Position.Top } style={ hidden } />
 			<span className={ `flex items-center justify-center rounded-full shadow-sm ${ data.top ? 'h-14 w-14 bg-accent-soft text-[#B45309] ring-2 ring-accent' : 'h-11 w-11 bg-primary-tint text-primary' }` }>
 				<Icon size={ data.top ? 24 : 20 } />
 			</span>
-			<span className={ `whitespace-nowrap rounded bg-white px-1.5 text-[11px] font-semibold shadow-sm ${ data.top ? 'text-[#B45309]' : 'text-ink' }` }>{ HUB_LABEL[ data.type ] } · { data.count }</span>
+			<span className={ `whitespace-nowrap rounded bg-white px-1.5 text-[11px] font-semibold shadow-sm ${ data.top ? 'text-[#B45309]' : 'text-ink' }` }>{ data.label ?? HUB_LABEL[ data.type ] ?? data.type } · { data.count }</span>
 			<Handle type="source" position={ Position.Top } style={ hidden } />
 		</div>
 	);
@@ -56,7 +56,7 @@ function layout( ring: RingDetail ): Node[] {
 	const pos = new Map( sim.map( ( n ) => [ n.id, { x: n.x ?? 0, y: n.y ?? 0 } ] ) );
 	return [
 		...ring.orders.map( ( o ): Node => ( { id: `o${ o.edge_id }`, type: 'order', position: pos.get( `o${ o.edge_id }` )!, data: { label: `#${ o.id }` } } ) ),
-		...ring.hubs.map( ( h ): Node => ( { id: h.id, type: 'hub', position: pos.get( h.id )!, data: { type: h.type, count: h.count, top: h.top } } ) ),
+		...ring.hubs.map( ( h ): Node => ( { id: h.id, type: 'hub', position: pos.get( h.id )!, data: { type: h.type, label: h.label, count: h.count, top: h.top } } ) ),
 	];
 }
 
@@ -67,12 +67,13 @@ function GraphView( { ring, onRefresh }: { ring: RingDetail; onRefresh: () => Pr
 	const edges = useMemo< Edge[] >(
 		() =>
 			ring.edges.map( ( [ o, h ] ) => {
-				const top = ring.hubs.find( ( x ) => x.id === h )?.top;
+				const hub = ring.hubs.find( ( x ) => x.id === h );
+				const top = hub?.top;
 				return {
 					id: `${ o }-${ h }`,
 					source: `o${ o }`,
 					target: h,
-					style: top ? { stroke: '#F59E0B', strokeWidth: 2.5, strokeDasharray: '6 4' } : { stroke: '#0F766E', strokeWidth: 2 },
+					style: hub?.dashed ? { stroke: '#94A3B8', strokeWidth: 1.5, strokeDasharray: '3 4' } : top ? { stroke: '#F59E0B', strokeWidth: 2.5, strokeDasharray: '6 4' } : { stroke: '#0F766E', strokeWidth: 2 },
 				};
 			} ),
 		[ ring ]
