@@ -81,6 +81,12 @@ class Edges {
 		return $wpdb->get_results( "SELECT * FROM {$this->table()}", ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
+	/** The hashes row of one order, or an empty array. */
+	public function row( int $order_id ): array {
+		global $wpdb;
+		return (array) $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE order_id = %d', $this->table(), $order_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	}
+
 	public function by_email_hash( string $hash ): array {
 		global $wpdb;
 		return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$this->table()} WHERE email_h = %s", $hash ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -100,6 +106,43 @@ class Edges {
 			$ids   = array_merge( $ids, array_map( 'intval', $found ) );
 		}
 		return array_slice( array_values( array_unique( $ids ) ), 0, 20 );
+	}
+
+	/**
+	 * Breadth-first ring: seed orders plus every real order reachable through shared email, phone or address hashes, up to $limit ids.
+	 *
+	 * @param int[] $seed_ids Orders to start from.
+	 * @return int[] Sorted order ids.
+	 */
+	public function component( array $seed_ids, int $limit ): array {
+		global $wpdb;
+		$seen     = array_fill_keys( array_map( 'intval', $seed_ids ), true );
+		$frontier = array_keys( $seen );
+		while ( $frontier ) {
+			if ( count( $seen ) >= $limit ) {
+				break;
+			}
+			$rows     = $wpdb->get_results( "SELECT * FROM {$this->table()} WHERE order_id IN (" . implode( ',', $frontier ) . ')', ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- ids are cast to int.
+			$frontier = array();
+			foreach ( array_keys( Rings::LINKS ) as $col ) {
+				$hashes = array_values( array_unique( array_filter( array_column( (array) $rows, $col ) ) ) );
+				if ( ! $hashes ) {
+					continue;
+				}
+				$in    = implode( ',', array_fill( 0, count( $hashes ), '%s' ) );
+				$found = $wpdb->get_col( $wpdb->prepare( "SELECT order_id FROM %i WHERE order_id < %d AND %i IN ($in) LIMIT %d", array_merge( array( $this->table(), self::SAMPLE_BASE, $col ), $hashes, array( $limit ) ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+				foreach ( $found as $id ) {
+					$id = (int) $id;
+					if ( ! isset( $seen[ $id ] ) && count( $seen ) < $limit ) {
+						$seen[ $id ] = true;
+						$frontier[]  = $id;
+					}
+				}
+			}
+		}
+		$ids = array_keys( $seen );
+		sort( $ids );
+		return $ids;
 	}
 
 	/** Which of email, phone, address a shopper shares with the given earlier orders. */

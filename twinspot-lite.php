@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Twinspot Lite
  * Description:       Spot rings of linked accounts and block repeat welcome coupons at WooCommerce checkout. Runs on your store; no data leaves your site.
- * Version:           0.1.0
+ * Version:           0.2.0
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
@@ -17,9 +17,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
-const TWINSPOT_LITE_VERSION = '0.1.0';
+const TWINSPOT_LITE_VERSION = '0.2.0';
 
 require __DIR__ . '/includes/autoload.php';
 
 register_activation_hook( __FILE__, array( \Twinspot_Lite\Plugin::class, 'activate' ) );
-( new \Twinspot_Lite\Plugin( __FILE__ ) )->boot();
+// On plugins_loaded so add-ons loaded after Lite can hook twinspot_lite_modules.
+add_action(
+	'plugins_loaded',
+	function () {
+		( new \Twinspot_Lite\Plugin( __FILE__ ) )->boot();
+	}
+);

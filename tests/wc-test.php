@@ -186,6 +186,39 @@ $id = $c1->get_id();
 $c1->delete( true );
 ts_check( 0 === $cnt( $id ), 'deleted order removed from index' );
 
+// ---------------------------------------------------------------- api facade
+echo "Api facade\n";
+ts_clean();
+$ra = ts_order( 'ra@example.com', '555-300-4000', '', '' );
+$rb = ts_order( 'rb@example.net', '555-300-4000', '7 Ring Rd', '30003' );
+$rc = ts_order( 'rc@example.org', '555-300-9999', '7 Ring Rd', '30003' );
+$rd = ts_order( 'rd@example.com', '555-777-8888', '88 Lone Ave', '88888' );
+$want = array( $ra->get_id(), $rb->get_id(), $rc->get_id() );
+sort( $want );
+$got = \Twinspot_Lite\Api::ring_orders_for_order( $ra->get_id() );
+sort( $got );
+ts_check( $want === $got, 'Api: ring_orders_for_order returns the multi-hop ring' );
+$got = \Twinspot_Lite\Api::ring_orders_for_details( 'rc@example.org', '555-300-9999', '7 Ring Rd', '30003' );
+sort( $got );
+ts_check( $want === $got, 'Api: ring_orders_for_details matches the same ring' );
+ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_details( 'nobody@example.com', '555-000-1111', '1 Nowhere Ln', '00001' ), 'Api: lone order has no ring (details)' );
+ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_order( $rd->get_id() ), 'Api: lone order has no ring (order)' );
+ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_details( '', '', '', '' ), 'Api: empty details match nothing' );
+ts_check( 2 === count( \Twinspot_Lite\Api::ring_orders_for_order( $ra->get_id(), 2 ) ), 'Api: limit caps the ring' );
+ts_check( array() === \Twinspot_Lite\Api::ring_orders_for_order( 1999999999 ), 'Api: unknown order has no ring' );
+ts_check( ! \Twinspot_Lite\Api::is_ring_allowed_for_order( $ra->get_id() ) && ! \Twinspot_Lite\Api::is_ring_allowed_for_details( 'rc@example.org', '555-300-9999', '7 Ring Rd', '30003' ), 'Api: ring not allowed by default' );
+$rh = array();
+foreach ( $want as $rid ) { // Like the Rings screen: store every hash of the ring.
+	$rh = array_merge( $rh, array( $edges->row( $rid )['email_h'], $edges->row( $rid )['phone_h'], $edges->row( $rid )['addr_h'] ) );
+}
+( new BlockLog() )->set_ring_allowed( 1, array_values( array_filter( $rh ) ), true );
+ts_check( \Twinspot_Lite\Api::is_ring_allowed_for_order( $ra->get_id() ) && \Twinspot_Lite\Api::is_ring_allowed_for_details( 'rc@example.org', '555-300-9999', '7 Ring Rd', '30003' ), 'Api: allowed ring reported for order and details' );
+( new BlockLog() )->set_ring_allowed( 1, array_values( array_filter( $rh ) ), false );
+\Twinspot_Lite\Api::hold_order( $rd, 'Test hold' );
+$rd = wc_get_order( $rd->get_id() );
+ts_check( 'on-hold' === $rd->get_status() && '1' === (string) $rd->get_meta( '_twinspot_lite_held' ), 'Api: hold_order puts the order on hold with the meta' );
+ts_clean();
+
 // ---------------------------------------------------------------- privacy and REST
 echo "Privacy and REST\n";
 $ex = apply_filters( 'wp_privacy_personal_data_exporters', array() );
