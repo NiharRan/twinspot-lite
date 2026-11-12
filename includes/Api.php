@@ -9,7 +9,9 @@ namespace Twinspot_Lite;
 
 use Twinspot_Lite\Data\BlockLog;
 use Twinspot_Lite\Data\Edges;
+use Twinspot_Lite\Data\Events;
 use Twinspot_Lite\Data\Fingerprinter;
+use Twinspot_Lite\Rest\Overview;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -78,6 +80,34 @@ class Api {
 	public static function is_ring_allowed_for_order( int $order_id ): bool {
 		$row = ( new Edges() )->row( $order_id );
 		return $row && ( new BlockLog() )->is_allowed( $row );
+	}
+
+	/** Ring state for an order: allowed, blocked or none (also none when the order is in no ring). */
+	public static function ring_state_for_order( int $order_id ): string {
+		$ring = self::overview()->detail( $order_id );
+		return $ring ? ( $ring['allowed'] ? 'allowed' : ( $ring['blocked'] ? 'blocked' : 'none' ) ) : 'none';
+	}
+
+	/**
+	 * Allow, block or clear the whole ring of an order.
+	 *
+	 * @param string $state allow, block or clear.
+	 * @return string|null The new state (allowed, blocked, none); null when the order is in no ring or $state is unknown.
+	 */
+	public static function set_ring_state( int $order_id, string $state ): ?string {
+		if ( ! in_array( $state, array( 'allow', 'block', 'clear' ), true ) ) {
+			return null;
+		}
+		$overview = self::overview();
+		if ( null === $overview->set_allowed( $order_id, 'allow' === $state ) ) {
+			return null;
+		}
+		$overview->set_blocked( $order_id, 'block' === $state );
+		return self::ring_state_for_order( $order_id );
+	}
+
+	private static function overview(): Overview {
+		return new Overview( new Edges(), new Fingerprinter(), new BlockLog(), new Events() );
 	}
 
 	/** Hold an order for review: flag, notify, move to on-hold. */
