@@ -6,15 +6,15 @@ module.exports = {
 	theme: {
 		extend: {
 			colors: {
-				primary: { DEFAULT: '#0F766E', hover: '#115E59', press: '#134E4A', soft: '#F0FDFA', tint: '#CCFBF1' },
-				accent: { DEFAULT: '#F59E0B', soft: '#FFFBEB', line: '#FDE68A' },
-				danger: { DEFAULT: '#DC2626', soft: '#FEF2F2', line: '#FECACA' },
-				success: { DEFAULT: '#16A34A', soft: '#F0FDF4', line: '#BBF7D0' },
-				ink: '#1E293B',
-				muted: '#64748B',
-				line: '#E2E8F0',
-				canvas: '#F6F7F7',
-				info: '#EEF2FF',
+				primary: { DEFAULT: '#0F6E5E', hover: '#0A5A4D', press: '#084A40', soft: '#F1F6F4', tint: '#DCEBE6' },
+				accent: { DEFAULT: '#B7791F', soft: '#FBF4E4', line: '#E6D2AE', ink: '#7A4E0A' },
+				danger: { DEFAULT: '#9B2C2C', soft: '#FAEEEE', line: '#E4BDBD' },
+				success: { DEFAULT: '#1F8A4C', soft: '#EDF6F0', line: '#BFDDCB' },
+				ink: '#132120',
+				muted: '#55605E',
+				line: '#DCE2DF',
+				canvas: '#F2F4F3',
+				info: '#EAEFED',
 			},
 			boxShadow: {
 				card: '0 1px 3px 0 rgba(0,0,0,0.04), 0 1px 2px -1px rgba(0,0,0,0.02)',

@@ -30,8 +30,8 @@ const LABEL: Record< EventType, string > = {
 const PILL: Record< EventType, string > = {
 	blocked: 'bg-danger-soft text-danger',
 	clean: 'bg-primary-soft text-primary',
-	ring: 'bg-accent-soft text-[#92400E]',
-	held: 'bg-accent-soft text-[#92400E]',
+	ring: 'bg-accent-soft text-accent-ink',
+	held: 'bg-accent-soft text-accent-ink',
 	import: 'bg-primary-tint text-primary',
 	rule: 'bg-primary-tint text-primary',
 };
@@ -44,7 +44,7 @@ const list = ( items: string[] ) => items.join( ' & ' );
 const orders = ( refs: OrderRef[] ) => refs.map( ( o ) => `#${ o.id }` ).join( ', ' );
 const ringLabel = ( key: number ) => `R-${ key % 4000000000 }`;
 
-function ago( iso: string ): string {
+export function ago( iso: string ): string {
 	const secs = ( Date.now() - new Date( iso ).getTime() ) / 1000;
 	const rtf = new Intl.RelativeTimeFormat( undefined, { numeric: 'auto' } );
 	if ( secs < 60 ) {
@@ -62,7 +62,7 @@ function ago( iso: string ): string {
 const clock = ( iso: string, utc = false ) => new Date( iso ).toLocaleTimeString( [], { hour12: false, timeZone: utc ? 'UTC' : undefined } );
 
 /** Text shown in the table (trigger, outcome) for one event. */
-function describe( e: ActivityEvent ) {
+export function describe( e: ActivityEvent ) {
 	const n = e.linked.length;
 	const via = list( e.matched.map( ( m ) => LINK_LABEL[ m ] ) );
 	const found = n ? sprintf( __( 'Found in Order %s', 'twinspot-lite' ), orders( e.linked ) ) : __( 'Earlier orders are no longer indexed', 'twinspot-lite' );
@@ -81,7 +81,7 @@ function describe( e: ActivityEvent ) {
 				title: __( 'New-customers-only coupon used by a returning shopper', 'twinspot-lite' ),
 				sub: found,
 				outcome: __( 'Order status set to “On hold”', 'twinspot-lite' ),
-				tone: 'text-[#92400E]',
+				tone: 'text-accent-ink',
 			};
 		case 'ring':
 			return {
@@ -120,7 +120,7 @@ function describe( e: ActivityEvent ) {
 				allowed: [ __( 'Ring is on the allow list', 'twinspot-lite' ), found ],
 				late: [ __( 'Matched after the coupon was accepted', 'twinspot-lite' ), found ],
 			}[ why ?? 'verified' ] ?? [ '', '' ];
-			return { title: t[ 0 ], sub: t[ 1 ], outcome: why === 'open' ? __( 'Allowed per coupon rule settings', 'twinspot-lite' ) : saved( where ), tone: why === 'late' ? 'text-[#92400E]' : 'text-primary' };
+			return { title: t[ 0 ], sub: t[ 1 ], outcome: why === 'open' ? __( 'Allowed per coupon rule settings', 'twinspot-lite' ) : saved( where ), tone: why === 'late' ? 'text-accent-ink' : 'text-primary' };
 		}
 	}
 }

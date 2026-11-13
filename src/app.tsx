@@ -116,7 +116,7 @@ export function App() {
 	const extra = extraTabs().find( ( t ) => t.id === tab );
 	return (
 		<MotionConfig reducedMotion="user">
-			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } />
+			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } stats={ data?.stats } />
 			{ error && tab !== 'overview' && <div role="alert" className="mb-5 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div> }
 			<motion.div key={ ringKey ?? tab } initial={ { opacity: 0, y: 8 } } animate={ { opacity: 1, y: 0 } } transition={ { duration: 0.22, ease: 'easeOut' } }>
 			{ ringKey !== null && <Suspense fallback={ <Spinner /> }><RingDetail orderId={ ringKey } onBack={ () => setRingKey( null ) } /></Suspense> }
@@ -134,6 +134,7 @@ export function App() {
 					dismissImported={ () => setImported( null ) }
 					onImport={ runImport }
 					onSample={ toggleSample }
+					onSettings={ () => setTab( 'settings' ) }
 				/>
 			) }
 			{ ringKey === null && tab === 'accounts' && <Accounts onOpen={ setRingKey } data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }
