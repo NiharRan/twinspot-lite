@@ -25,13 +25,19 @@ function savedView(): { tab: Tab; ring: number | null } {
 	}
 }
 
+const urlView = () => {
+	const q = new URLSearchParams( window.location.search );
+	const t = q.get( 'tab' ) as Tab | null;
+	return { tab: t && known( t ) ? t : null, ring: Number( q.get( 'ring' ) ) || null };
+};
+
 export function App() {
 	const [ filters, setFilters ] = useState< Filters >( { search: '', min_size: 2, link: '', page: 1 } );
 	const [ data, setData ] = useState< OverviewData | null >( null );
 	const [ error, setError ] = useState( '' );
 	const [ importing, setImporting ] = useState( false );
-	const [ tab, setTab ] = useState< Tab >( () => savedView().tab );
-	const [ ringKey, setRingKey ] = useState< number | null >( () => Number( new URLSearchParams( window.location.search ).get( 'ring' ) ) || savedView().ring ); // ?ring=<order id> deep-links from order notes.
+	const [ tab, setTab ] = useState< Tab >( () => urlView().tab ?? savedView().tab );
+	const [ ringKey, setRingKey ] = useState< number | null >( () => urlView().ring ?? ( urlView().tab ? null : savedView().ring ) ); // ?ring=<order id> deep-links from order notes.
 	const [ settings, setSettings ] = useState< SettingsData >( { enabled: true, hold: false } );
 	const enabled = settings.enabled || settings.hold; // Hold mode still guards coupons, just without refusing them.
 	const [ progress, setProgress ] = useState( 0 );
@@ -53,6 +59,30 @@ export function App() {
 			window.localStorage.setItem( KEY, JSON.stringify( { tab, ring: ringKey } ) );
 		} catch {}
 	}, [ tab, ringKey ] );
+
+	// Keep the address bar in step with the screen so links, reloads and the back button work.
+	const synced = useRef( false );
+	useEffect( () => {
+		const q = new URLSearchParams( window.location.search );
+		q.set( 'tab', tab );
+		if ( ringKey ) q.set( 'ring', String( ringKey ) );
+		else q.delete( 'ring' );
+		const url = `${ window.location.pathname }?${ q }`;
+		if ( url !== window.location.pathname + window.location.search ) {
+			window.history[ synced.current ? 'pushState' : 'replaceState' ]( null, '', url );
+		}
+		synced.current = true;
+	}, [ tab, ringKey ] );
+
+	useEffect( () => {
+		const back = () => {
+			const v = urlView();
+			setTab( v.tab ?? 'overview' );
+			setRingKey( v.ring );
+		};
+		window.addEventListener( 'popstate', back );
+		return () => window.removeEventListener( 'popstate', back );
+	}, [] );
 
 	const save = ( next: SettingsData ) => saveSettings( next ).then( setSettings );
 
