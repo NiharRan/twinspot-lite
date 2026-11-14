@@ -25,13 +25,19 @@ function savedView(): { tab: Tab; ring: number | null } {
 	}
 }
 
+const urlView = () => {
+	const q = new URLSearchParams( window.location.search );
+	const t = q.get( 'tab' ) as Tab | null;
+	return { tab: t && known( t ) ? t : null, ring: Number( q.get( 'ring' ) ) || null };
+};
+
 export function App() {
 	const [ filters, setFilters ] = useState< Filters >( { search: '', min_size: 2, link: '', page: 1 } );
 	const [ data, setData ] = useState< OverviewData | null >( null );
 	const [ error, setError ] = useState( '' );
 	const [ importing, setImporting ] = useState( false );
-	const [ tab, setTab ] = useState< Tab >( () => savedView().tab );
-	const [ ringKey, setRingKey ] = useState< number | null >( () => Number( new URLSearchParams( window.location.search ).get( 'ring' ) ) || savedView().ring ); // ?ring=<order id> deep-links from order notes.
+	const [ tab, setTab ] = useState< Tab >( () => urlView().tab ?? savedView().tab );
+	const [ ringKey, setRingKey ] = useState< number | null >( () => urlView().ring ?? ( urlView().tab ? null : savedView().ring ) ); // ?ring=<order id> deep-links from order notes.
 	const [ settings, setSettings ] = useState< SettingsData >( { enabled: true, hold: false } );
 	const enabled = settings.enabled || settings.hold; // Hold mode still guards coupons, just without refusing them.
 	const [ progress, setProgress ] = useState( 0 );
@@ -53,6 +59,30 @@ export function App() {
 			window.localStorage.setItem( KEY, JSON.stringify( { tab, ring: ringKey } ) );
 		} catch {}
 	}, [ tab, ringKey ] );
+
+	// Keep the address bar in step with the screen so links, reloads and the back button work.
+	const synced = useRef( false );
+	useEffect( () => {
+		const q = new URLSearchParams( window.location.search );
+		q.set( 'tab', tab );
+		if ( ringKey ) q.set( 'ring', String( ringKey ) );
+		else q.delete( 'ring' );
+		const url = `${ window.location.pathname }?${ q }`;
+		if ( url !== window.location.pathname + window.location.search ) {
+			window.history[ synced.current ? 'pushState' : 'replaceState' ]( null, '', url );
+		}
+		synced.current = true;
+	}, [ tab, ringKey ] );
+
+	useEffect( () => {
+		const back = () => {
+			const v = urlView();
+			setTab( v.tab ?? 'overview' );
+			setRingKey( v.ring );
+		};
+		window.addEventListener( 'popstate', back );
+		return () => window.removeEventListener( 'popstate', back );
+	}, [] );
 
 	const save = ( next: SettingsData ) => saveSettings( next ).then( setSettings );
 
@@ -116,7 +146,7 @@ export function App() {
 	const extra = extraTabs().find( ( t ) => t.id === tab );
 	return (
 		<MotionConfig reducedMotion="user">
-			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } />
+			<Header tab={ tab } setTab={ ( t ) => { setRingKey( null ); setTab( t ); } } enabled={ enabled } stats={ data?.stats } />
 			{ error && tab !== 'overview' && <div role="alert" className="mb-5 rounded-xl border border-danger-line bg-danger-soft p-4 text-danger">{ error }</div> }
 			<motion.div key={ ringKey ?? tab } initial={ { opacity: 0, y: 8 } } animate={ { opacity: 1, y: 0 } } transition={ { duration: 0.22, ease: 'easeOut' } }>
 			{ ringKey !== null && <Suspense fallback={ <Spinner /> }><RingDetail orderId={ ringKey } onBack={ () => setRingKey( null ) } /></Suspense> }
@@ -134,6 +164,7 @@ export function App() {
 					dismissImported={ () => setImported( null ) }
 					onImport={ runImport }
 					onSample={ toggleSample }
+					onSettings={ () => setTab( 'settings' ) }
 				/>
 			) }
 			{ ringKey === null && tab === 'accounts' && <Accounts onOpen={ setRingKey } data={ data } filters={ filters } setFilters={ ( f: Partial< Filters > ) => setFilters( ( old ) => ( { ...old, page: 1, ...f } ) ) } setPage={ ( page: number ) => setFilters( ( old ) => ( { ...old, page } ) ) } /> }

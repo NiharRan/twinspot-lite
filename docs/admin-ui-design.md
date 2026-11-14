@@ -21,13 +21,14 @@ Bundle size: about 181 KB JS and 10 KB CSS.
 
 Defined in `tailwind.config.js` (names in brackets are the Tailwind class names).
 
-- Primary teal `#0F766E` [`primary`], hover `#115E59`, pressed `#134E4A`, soft `#F0FDFA`, tint `#CCFBF1`. Never WooCommerce purple.
-- Accent amber `#F59E0B` [`accent`], soft `#FFFBEB`, line `#FDE68A`. Warnings and larger rings.
-- Danger `#DC2626` [`danger`], soft `#FEF2F2`, line `#FECACA`. Biggest rings, errors.
-- Success `#16A34A` [`success`], soft `#F0FDF4`, line `#BBF7D0`.
-- Neutrals: ink `#1E293B`, muted `#64748B`, line `#E2E8F0`, canvas `#F6F7F7`, info band `#EEF2FF`.
-- Type: system UI stack, 14px body, 24px page title, 600 headings, tabular numbers in tables.
-- Shape: 12px cards (`rounded-xl`) with a 1px border and a soft shadow, 6px buttons and inputs, pill badges.
+- Primary verdigris `#0F6E5E` [`primary`], hover `#0A5A4D`, pressed `#084A40`, soft `#F1F6F4`, tint `#DCEBE6`. Never WooCommerce purple.
+- Accent brass `#B7791F` [`accent`], text `#7A4E0A` [`accent-ink`], soft `#FBF4E4`, line `#E6D2AE`. Warnings and size-4 rings.
+- Danger oxblood `#9B2C2C` [`danger`], soft `#FAEEEE`, line `#E4BDBD`. Rings of 5 or more, errors.
+- Success `#1F8A4C` [`success`], soft `#EDF6F0`, line `#BFDDCB`.
+- Neutrals: ink `#132120`, muted `#55605E`, line `#DCE2DF`, canvas `#F2F4F3`, quiet fill `#EAEFED` [`info`].
+- Type: Schibsted Grotesk Variable (OFL, from `@fontsource-variable/schibsted-grotesk`, declared in `src/style.css` so the woff2 files ship in `build/fonts/`), system stack as fallback. 14px body, tabular numbers everywhere, 42px sentence headline on Overview, 20px section headings.
+- Shape by role: 14px cards with a 1px border and no shadow, 10px buttons and inputs, 6px chips. Sections sit on the page background; only lists and forms get a card.
+- Overview: the month as one sentence (numbers from the Activity endpoint), a ruled row of figures, ring rows that draw the ring (one node per order), and a timeline of the last 5 events. No stat cards.
 
 ## Screens
 

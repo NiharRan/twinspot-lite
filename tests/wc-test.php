@@ -250,6 +250,23 @@ wp_set_current_user( 0 );
 $res = rest_do_request( new WP_REST_Request( 'GET', '/twinspot-lite/v1/overview' ) );
 ts_check( in_array( $res->get_status(), array( 401, 403 ), true ), 'REST refuses anonymous users' );
 
+// ---------------------------------------------------------------- ring state api
+echo "Api ring state\n";
+ts_clean();
+$solo = ts_order( 'solo.state@example.com', '555-410-0001', '1 Solo St', '41001' );
+ts_check( null === \Twinspot_Lite\Api::set_ring_state( $solo->get_id(), 'allow' ), 'Api: set_ring_state is null for an order in no ring' );
+ts_check( 'none' === \Twinspot_Lite\Api::ring_state_for_order( $solo->get_id() ), 'Api: ring_state_for_order is none for an order in no ring' );
+$sa = ts_order( 'same.state@example.com', '555-410-0002', '2 Ring St', '41002' );
+$sb = ts_order( 'same.state@example.com', '555-410-0003', '3 Other St', '41003' );
+$sid = $sa->get_id();
+ts_check( 'allowed' === \Twinspot_Lite\Api::set_ring_state( $sid, 'allow' ), 'Api: allow returns allowed' );
+ts_check( 'allowed' === \Twinspot_Lite\Api::ring_state_for_order( $sb->get_id() ), 'Api: ring_state_for_order agrees (allowed)' );
+ts_check( 'blocked' === \Twinspot_Lite\Api::set_ring_state( $sid, 'block' ), 'Api: block returns blocked' );
+ts_check( 'blocked' === \Twinspot_Lite\Api::ring_state_for_order( $sid ) && ! \Twinspot_Lite\Api::is_ring_allowed_for_order( $sid ), 'Api: blocked ring is no longer allowed' );
+ts_check( null === \Twinspot_Lite\Api::set_ring_state( $sid, 'bogus' ), 'Api: unknown state returns null' );
+ts_check( 'none' === \Twinspot_Lite\Api::set_ring_state( $sid, 'clear' ), 'Api: clear returns none' );
+ts_check( 'none' === \Twinspot_Lite\Api::ring_state_for_order( $sid ), 'Api: ring_state_for_order agrees (none)' );
+
 // ---------------------------------------------------------------- done
 ts_clean();
 update_option( 'twinspot_lite_enabled', $ts_saved[0] ? $ts_saved[0] : 'yes' );

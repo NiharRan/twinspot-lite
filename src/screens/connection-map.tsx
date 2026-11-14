@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useNodesState, useReactFlow, type Edge, type Node, type NodeProps } from '@xyflow/react';
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, type SimulationNodeDatum } from 'd3-force';
 import { AtSign, Home, Maximize, Minimize, Network, Phone, RefreshCw, ShoppingCart } from 'lucide-react';
+import { districtPositions } from '../lib/districts';
 import type { LinkType, RingDetail } from '../types';
 
 const HUB_ICON: Record< string, typeof AtSign > = { email: AtSign, phone: Phone, address: Home };
@@ -41,19 +41,9 @@ function HubNode( { data }: NodeProps< Node< { type: string; label?: string; cou
 
 const nodeTypes = { order: OrderNode, hub: HubNode };
 
-/** Force layout run to rest up front, so the graph opens still instead of jiggling. */
+/** Districts layout, computed up front so the graph opens still instead of jiggling. */
 function layout( ring: RingDetail ): Node[] {
-	type N = SimulationNodeDatum & { id: string };
-	const sim: N[] = [ ...ring.orders.map( ( o ) => ( { id: `o${ o.edge_id }` } ) ), ...ring.hubs.map( ( h ) => ( { id: h.id } ) ) ];
-	const links = ring.edges.map( ( [ o, h ] ) => ( { source: `o${ o }`, target: h } ) );
-	forceSimulation( sim )
-		.force( 'link', forceLink< N, { source: string; target: string } >( links ).id( ( n ) => n.id ).distance( 130 ) )
-		.force( 'charge', forceManyBody().strength( -420 ) )
-		.force( 'collide', forceCollide( 50 ) )
-		.force( 'center', forceCenter( 0, 0 ) )
-		.stop()
-		.tick( 300 );
-	const pos = new Map( sim.map( ( n ) => [ n.id, { x: n.x ?? 0, y: n.y ?? 0 } ] ) );
+	const pos = districtPositions( ring );
 	return [
 		...ring.orders.map( ( o ): Node => ( { id: `o${ o.edge_id }`, type: 'order', position: pos.get( `o${ o.edge_id }` )!, data: { label: `#${ o.id }` } } ) ),
 		...ring.hubs.map( ( h ): Node => ( { id: h.id, type: 'hub', position: pos.get( h.id )!, data: { type: h.type, label: h.label, count: h.count, top: h.top } } ) ),
@@ -65,17 +55,21 @@ function GraphView( { ring, onRefresh }: { ring: RingDetail; onRefresh: () => Pr
 	const initial = useMemo( () => layout( ring ), [ ring ] );
 	const [ nodes, setNodes, onNodesChange ] = useNodesState( initial );
 	const edges = useMemo< Edge[] >(
-		() =>
-			ring.edges.map( ( [ o, h ] ) => {
+		() => {
+			const degree = new Map< number, number >();
+			ring.edges.forEach( ( [ o ] ) => degree.set( o, ( degree.get( o ) ?? 0 ) + 1 ) );
+			return ring.edges.map( ( [ o, h ] ) => {
 				const hub = ring.hubs.find( ( x ) => x.id === h );
 				const top = hub?.top;
+				const member = degree.get( o ) === 1; // Inside one district: keep it quiet so bridges stand out.
 				return {
 					id: `${ o }-${ h }`,
 					source: `o${ o }`,
 					target: h,
-					style: hub?.dashed ? { stroke: '#94A3B8', strokeWidth: 1.5, strokeDasharray: '3 4' } : top ? { stroke: '#F59E0B', strokeWidth: 2.5, strokeDasharray: '6 4' } : { stroke: '#0F766E', strokeWidth: 2 },
+					style: hub?.dashed ? { stroke: '#94A3B8', strokeWidth: 1.5, strokeDasharray: '3 4' } : top ? { stroke: '#F59E0B', strokeWidth: member ? 1.5 : 2.5, strokeDasharray: '6 4', opacity: member ? 0.6 : 1 } : { stroke: '#0F766E', strokeWidth: member ? 1 : 2, opacity: member ? 0.5 : 1 },
 				};
-			} ),
+			} );
+		},
 		[ ring ]
 	);
 	const box = useRef< HTMLDivElement >( null );
